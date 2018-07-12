@@ -30,3 +30,15 @@ proguard/
 
 # Android Studio captures folder
 captures/
+
+# Additional ignores
+*.iml
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+.externalNativeBuild
+.idea/vcs.xml
+app/src/release/res/values/google_maps_api\.xml
+
+app/src/debug/res/values/google_maps_api\.xml
