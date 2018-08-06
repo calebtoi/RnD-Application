@@ -1,7 +1,10 @@
 package com.example.maptest;
 
 import android.Manifest;
+import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Looper;
@@ -10,6 +13,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -23,8 +28,13 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+
+import java.util.ArrayList;
 
 import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
@@ -32,9 +42,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private LocationRequest mLocationRequest;
+    private ArrayList coordinates = new ArrayList();
+    private ArrayList pointsOfInterests = new ArrayList();
 
-    private long UPDATE_INTERVAL = 1000; //1 sec
-    private long FASTEST_INTERVAL = 1000; //1 sec
+
+    private long UPDATE_INTERVAL = 10000; //10 sec
+    private long FASTEST_INTERVAL = 10000; //10 sec
+
+    private static final int EDIT_REQUEST = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +59,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        startLocationUpdates();
+
+        final Button markLocationButton = findViewById(R.id.Mark_Location);
+        markLocationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                markLocation();
+            }
+        });
+
+        final Button startLocationUpdatesButton = findViewById(R.id.Start_Route);
+        startLocationUpdatesButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                Toast toast;
+                toast = Toast.makeText(getApplicationContext(), "Now tracking for your route", Toast.LENGTH_SHORT);
+                toast.show();
+                startLocationUpdates();
+            }
+        });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch(requestCode) {
+            case (EDIT_REQUEST) : {
+                if (resultCode == Activity.RESULT_OK) {
+                    MarkerOptions markerOptions = data.getParcelableExtra("marker");
+                    mMap.addMarker(markerOptions);
+                }
+                break;
+            }
+        }
     }
 
     //Trigger new location updates at interval
@@ -66,7 +113,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SettingsClient settingsClient = LocationServices.getSettingsClient(this);
         settingsClient.checkLocationSettings(locationSettingsRequest);
 
-        //new Google API SDK v11 uses getFusedLocationProviderClient(this)
         //Permission
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -78,6 +124,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
+        //new Google API SDK v11 uses getFusedLocationProviderClient(this)
         getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest, new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
@@ -93,11 +140,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Double.toString(location.getLatitude()) + "," +
                 Double.toString(location.getLongitude());
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-        //You can now create a LatLng Object for use with maps
+
         LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
+        coordinates.add(latlng);
+
+        msg = "Array size: "+ coordinates.size();
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+
+        if (coordinates.size() >= 2){
+            drawRoute();
+        }
     }
 
-    public void getLastLocation() {
+    public void drawRoute(){
+        //create polylines between gps locations
+        LatLng previousLocation = (LatLng) coordinates.get(coordinates.size() - 2);
+        LatLng currentLocation = (LatLng) coordinates.get(coordinates.size() - 1);
+
+        mMap.addPolyline(new PolylineOptions()
+            .add(previousLocation, currentLocation)
+            .width(5)
+            .color(Color.RED));
+    }
+
+    public void markLocation() {
         //Get last known recent location using new Google Play Sevices SDK (v11+)
         FusedLocationProviderClient locationClient = getFusedLocationProviderClient(this);
 
@@ -120,6 +186,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         //GPS location can be null if GPS is switched off
                         if (location != null) {
                             onLocationChanged(location);
+                            LatLng poi = new LatLng(location.getLatitude(), location.getLongitude());
+                            coordinates.add(poi);
+                            pointsOfInterests.add(poi);
+//                            mMap.addMarker(new MarkerOptions()
+//                                    .position(poi)
+//                                    .anchor(0.5f, 0.5f));
+                            Intent edit = new Intent(MapsActivity.this, EditMarker.class);
+                            edit.putExtra("location", poi);
+                            MapsActivity.this.startActivityForResult(edit, EDIT_REQUEST);
                         }
                     }
                 })
@@ -149,11 +224,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
             googleMap.setMyLocationEnabled(true);
         }
-
-//        // Add a marker in Sydney and move the camera
-//        LatLng sydney = new LatLng(-34, 151);
-//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
     }
 
     private boolean checkPermissions() {

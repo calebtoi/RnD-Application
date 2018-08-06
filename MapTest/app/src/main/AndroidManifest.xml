@@ -41,6 +41,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".EditMarker"
+            android:label="Edit_Marker">
+        </activity>
     </application>
 
 </manifest>
