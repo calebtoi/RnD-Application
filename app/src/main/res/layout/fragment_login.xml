@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- Colours and images are temporary and will be changed in the future
-     TODO: change text fields to implement TextInputLayout & TextInputEditText -->
+<!-- Colours and images are temporary and will be changed in the future -->
 
 <android.support.constraint.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -31,34 +30,48 @@
                 android:src="@drawable/logo_small" />
 
             <!-- EMAIL FIELD: possibly add icon -->
-            <EditText
-                android:id="@+id/loginEmail"
+            <android.support.design.widget.TextInputLayout
                 android:layout_width="280dp"
-                android:layout_height="56dp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:ems="10"
-                android:hint="Email"
-                android:textSize="16sp"
-                android:textColor="@android:color/white"
-                android:textColorHint="@color/textPrimary"
-                android:backgroundTint="@android:color/white"
-                android:inputType="textEmailAddress" />
+                android:layout_height="wrap_content"
+                android:textColorHint="@android:color/white">
+
+                <android.support.design.widget.TextInputEditText
+                    android:id="@+id/loginEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:height="56dp"
+                    android:ems="10"
+                    android:textSize="16sp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:hint="Email"
+                    android:textColor="@android:color/white"
+                    android:backgroundTint="@android:color/white"
+                    android:inputType="textEmailAddress" />
+
+            </android.support.design.widget.TextInputLayout>
 
             <!-- PASSWORD FIELD: possibly add icon -->
-            <EditText
-                android:id="@+id/loginPassword"
+            <android.support.design.widget.TextInputLayout
                 android:layout_width="280dp"
-                android:layout_height="56dp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:ems="10"
-                android:hint="Password"
-                android:textSize="16sp"
-                android:textColor="@android:color/white"
-                android:textColorHint="@color/textPrimary"
-                android:backgroundTint="@android:color/white"
-                android:inputType="textPassword" />
+                android:layout_height="wrap_content"
+                android:textColorHint="@android:color/white">
+
+                <android.support.design.widget.TextInputEditText
+                    android:id="@+id/loginPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:height="56dp"
+                    android:ems="10"
+                    android:textSize="16sp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:hint="Password"
+                    android:textColor="@android:color/white"
+                    android:backgroundTint="@android:color/white"
+                    android:inputType="textPassword" />
+
+            </android.support.design.widget.TextInputLayout>
 
             <!-- LOGIN BUTTON -->
             <Button
@@ -76,7 +89,7 @@
 
             <!-- SIGN UP BUTTON -->
             <Button
-                android:id="@+id/buttonSignup"
+                android:id="@+id/buttonSignupLink"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@android:color/transparent"

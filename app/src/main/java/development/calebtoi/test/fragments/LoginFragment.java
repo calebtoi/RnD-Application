@@ -57,7 +57,7 @@ public class LoginFragment extends Fragment {
         emailField = view.findViewById(R.id.loginEmail);
         passwordField = view.findViewById(R.id.loginPassword);
         loginButton = view.findViewById(R.id.buttonLogin);
-        signupButton = view.findViewById(R.id.buttonSignup);
+        signupButton = view.findViewById(R.id.buttonSignupLink);
 
         // Sends data grabbed from the login fields to the Main Activity
         loginButton.setOnClickListener(new View.OnClickListener(){
