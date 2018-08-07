@@ -1,22 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- Placeholder Login Screen -->
+<!-- Colours and images are temporary and will be changed in the future -->
+
 <android.support.constraint.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="development.calebtoi.test.fragments.LoginFragment">
 
-    <Button
-        android:id="@+id/loginButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Log in"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@drawable/login_background"
+        android:gravity="center">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@android:color/transparent"
+            android:gravity="center">
+
+            <!-- BRAND LOGO -->
+            <ImageView
+                android:layout_width="250dp"
+                android:layout_height="250dp"
+                android:src="@drawable/logo_small" />
+
+            <!-- EMAIL FIELD: possibly add icon -->
+            <EditText
+                android:id="@+id/loginEmail"
+                android:layout_width="280dp"
+                android:layout_height="56dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:ems="10"
+                android:hint="Email"
+                android:textSize="16sp"
+                android:textColor="@android:color/white"
+                android:textColorHint="@color/textPrimary"
+                android:backgroundTint="@android:color/white"
+                android:inputType="textEmailAddress" />
+
+            <!-- PASSWORD FIELD: possibly add icon -->
+            <EditText
+                android:id="@+id/loginPassword"
+                android:layout_width="280dp"
+                android:layout_height="56dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:ems="10"
+                android:hint="Password"
+                android:textSize="16sp"
+                android:textColor="@android:color/white"
+                android:textColorHint="@color/textPrimary"
+                android:backgroundTint="@android:color/white"
+                android:inputType="textPassword" />
+
+            <!-- LOGIN BUTTON -->
+            <Button
+                android:id="@+id/buttonLogin"
+                android:layout_width="280dp"
+                android:layout_height="wrap_content"
+                android:minHeight="40dp"
+                android:background="@drawable/rounded_button"
+                android:text="LOGIN"
+                android:textSize="14sp"
+                android:textColor="@color/textPrimary"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="10dp"
+                android:elevation="2dp"/>
+
+            <!-- SIGN UP BUTTON -->
+            <Button
+                android:id="@+id/buttonSignup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:text="Don't have an account? Click here"
+                />
+
+
+            <android.support.design.widget.TextInputLayout
+                android:layout_width="280dp"
+                android:layout_height="wrap_content">
+                
+
+        </LinearLayout>
+
+
+    </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>
