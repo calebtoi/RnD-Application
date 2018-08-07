@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- Colours and images are temporary and will be changed in the future -->
+<!-- Colours and images are temporary and will be changed in the future
+     TODO: change text fields to implement TextInputLayout & TextInputEditText -->
 
 <android.support.constraint.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -84,11 +85,6 @@
                 android:text="Don't have an account? Click here"
                 />
 
-
-            <android.support.design.widget.TextInputLayout
-                android:layout_width="280dp"
-                android:layout_height="wrap_content">
-                
 
         </LinearLayout>
 
