@@ -15,6 +15,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -32,7 +33,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
 
@@ -42,14 +42,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private LocationRequest mLocationRequest;
-    private ArrayList coordinates = new ArrayList();
-    private ArrayList pointsOfInterests = new ArrayList();
+    private LocationCallback mLocationCallback;
+    private ArrayList<Location> coordinates = new ArrayList();
+    private ArrayList<MarkerOptions> pointsOfInterests = new ArrayList();
 
 
     private long UPDATE_INTERVAL = 10000; //10 sec
     private long FASTEST_INTERVAL = 10000; //10 sec
 
     private static final int EDIT_REQUEST = 1;
+
+    private TextView distanceInMetersTextView;
+    private float distanceInMetersFloat = 0.0f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +63,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult == null) {
+                    return;
+                }
+                onLocationChanged(locationResult.getLastLocation());
+            };
+        };
+        distanceInMetersTextView = findViewById(R.id.Distance_Text);
 
         final Button markLocationButton = findViewById(R.id.Mark_Location);
         markLocationButton.setOnClickListener(new View.OnClickListener() {
@@ -78,6 +93,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 startLocationUpdates();
             }
         });
+
+        final Button pauseLocationUpdatesButton = findViewById(R.id.Pause_Route);
+        pauseLocationUpdatesButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast toast;
+                toast = Toast.makeText(getApplicationContext(), "Paused", Toast.LENGTH_SHORT);
+                toast.show();
+                stopLocationUpdates();
+            }
+        });
+    }
+
+    private void stopLocationUpdates(){
+        getFusedLocationProviderClient(this).removeLocationUpdates(mLocationCallback);
+        Toast toast;
+        toast = Toast.makeText(getApplicationContext(), "inside stop location update", Toast.LENGTH_SHORT);
+        toast.show();
+    }
+
+    public void calculateDistance(Location loc1, Location loc2){
+        float distance = loc1.distanceTo(loc2);
+        distanceInMetersFloat = distance + distanceInMetersFloat;
+//        Random r = new Random();
+//        int i1 = r.nextInt(100 - 1) + 1;
+        distanceInMetersTextView.setText(Float.toString(distanceInMetersFloat));
     }
 
     @Override
@@ -87,6 +128,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             case (EDIT_REQUEST) : {
                 if (resultCode == Activity.RESULT_OK) {
                     MarkerOptions markerOptions = data.getParcelableExtra("marker");
+                    pointsOfInterests.add(markerOptions);
                     mMap.addMarker(markerOptions);
                 }
                 break;
@@ -125,14 +167,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             return;
         }
         //new Google API SDK v11 uses getFusedLocationProviderClient(this)
-        getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest, new LocationCallback() {
+        getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+    }
+
+    /*
+    new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 //do work here
                 onLocationChanged(locationResult.getLastLocation());
             }
-        }, Looper.myLooper());
-    }
+        }
+     */
 
     public void onLocationChanged(Location location) {
         //New location has now been determined
@@ -141,8 +187,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Double.toString(location.getLongitude());
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
 
-        LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
-        coordinates.add(latlng);
+        //LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
+        coordinates.add(location);
 
         msg = "Array size: "+ coordinates.size();
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
@@ -154,13 +200,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void drawRoute(){
         //create polylines between gps locations
-        LatLng previousLocation = (LatLng) coordinates.get(coordinates.size() - 2);
-        LatLng currentLocation = (LatLng) coordinates.get(coordinates.size() - 1);
+        Location previousLocation = coordinates.get(coordinates.size() - 2);
+        Location currentLocation = coordinates.get(coordinates.size() - 1);
+
+        LatLng temp1 = new LatLng(previousLocation.getLatitude(), previousLocation.getLongitude());
+        LatLng temp2 = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 
         mMap.addPolyline(new PolylineOptions()
-            .add(previousLocation, currentLocation)
+            .add(temp1, temp2)
             .width(5)
             .color(Color.RED));
+
+        calculateDistance(previousLocation, currentLocation);
+        //calculateDistance();
     }
 
     public void markLocation() {
@@ -187,11 +239,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         if (location != null) {
                             onLocationChanged(location);
                             LatLng poi = new LatLng(location.getLatitude(), location.getLongitude());
-                            coordinates.add(poi);
-                            pointsOfInterests.add(poi);
-//                            mMap.addMarker(new MarkerOptions()
-//                                    .position(poi)
-//                                    .anchor(0.5f, 0.5f));
+                            coordinates.add(location);
+
                             Intent edit = new Intent(MapsActivity.this, EditMarker.class);
                             edit.putExtra("location", poi);
                             MapsActivity.this.startActivityForResult(edit, EDIT_REQUEST);
@@ -205,6 +254,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         e.printStackTrace();
                     }
                 });
+
     }
 
     @Override
