@@ -39,6 +39,11 @@ captures/
 .DS_Store
 .externalNativeBuild
 .idea/vcs.xml
+.idea/workspace.xml
 app/src/release/res/values/google_maps_api\.xml
 
 app/src/debug/res/values/google_maps_api\.xml
+
+\.idea/caches/build_file_checksums\.ser
+
+\.idea/
