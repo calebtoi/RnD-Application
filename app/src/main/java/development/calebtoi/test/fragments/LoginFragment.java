@@ -4,24 +4,33 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import development.calebtoi.test.R;
 
 // Placeholder login fragment
 public class LoginFragment extends Fragment {
 
-    // Fields used in the loging in sequence
+    // Fields used in the logging in sequence
     private EditText emailField;
+    private TextInputLayout emailTIL;
     private EditText passwordField;
+    private TextInputLayout passwordTIL;
     private Button loginButton;
     private Button signupButton;
+
+    private String email;
+    private String password;
 
     private View view;
 
@@ -32,8 +41,6 @@ public class LoginFragment extends Fragment {
         void OnLoginDataPass(String email, String password);
     }
 
-
-    // TODO: learn what this does
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -44,6 +51,7 @@ public class LoginFragment extends Fragment {
             ex.printStackTrace();
         }
     }
+
 
     @Nullable
     @Override
@@ -59,12 +67,23 @@ public class LoginFragment extends Fragment {
         loginButton = view.findViewById(R.id.buttonLogin);
         signupButton = view.findViewById(R.id.buttonSignupLink);
 
+        emailTIL = view.findViewById(R.id.loginEmailTIL);
+        passwordTIL = view.findViewById(R.id.loginPasswordTIL);
+
+
         // Sends data grabbed from the login fields to the Main Activity
         loginButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                // TODO: field null error handler
-                dataPasser.OnLoginDataPass(emailField.getText().toString(), passwordField.getText().toString());
+                password = passwordField.getText().toString();
+                email = emailField.getText().toString();
+
+                // Basic empty field checker
+                if(!TextUtils.isEmpty(email) || !TextUtils.isEmpty(password)){
+                    dataPasser.OnLoginDataPass(email, password);
+                } else {
+                    Toast.makeText(getContext(), "Fields are empty", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -73,8 +92,11 @@ public class LoginFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
-
-
+                Fragment frag = new SignupFragment();
+                FragmentManager manager = getFragmentManager();
+                manager.beginTransaction()
+                        .replace(R.id.content_test, frag)
+                        .commit();
             }
         });
 

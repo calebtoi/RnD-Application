@@ -1,10 +1,11 @@
 package development.calebtoi.test;
 
+import android.content.Intent;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -16,11 +17,16 @@ import com.google.firebase.auth.FirebaseUser;
 
 import development.calebtoi.test.fragments.GPSFragment;
 import development.calebtoi.test.fragments.LoginFragment;
+import development.calebtoi.test.fragments.SignupFragment;
 
-public class MainActivity extends AppCompatActivity implements LoginFragment.OnLoginDataPass {
+public class MainActivity extends AppCompatActivity implements LoginFragment.OnLoginDataPass, SignupFragment.OnSignUpDataPass {
 
-    String userEmail;
-    String userPassword;
+    String loginEmail;
+    String loginPassword;
+
+    String signupUsername;
+    String signupEmail;
+    String signupPassword;
 
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
@@ -30,11 +36,9 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
     @Override
     public void OnLoginDataPass(String email, String password){
 
-        if(email == null || password == null){
-            // Hanlde error
-        } else {
-            userEmail = email;
-            userPassword = password;
+        if(email != null || password != null){
+            loginEmail = email;
+            loginPassword = password;
 
             mAuth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
@@ -45,11 +49,14 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                                 Log.d(TAG, "signInWithEmail:success");
                                 FirebaseUser user = mAuth.getCurrentUser();
 
-                                Fragment frag = new GPSFragment();
-                                FragmentManager manager = getSupportFragmentManager();
-                                manager.beginTransaction()
-                                        .replace(R.id.content_test, frag)
-                                        .commit();
+//                                Fragment frag = new GPSFragment();
+//                                FragmentManager manager = getSupportFragmentManager();
+//                                manager.beginTransaction()
+//                                        .replace(R.id.content_test, frag)
+//                                        .commit();
+
+                                Intent mapIntent = new Intent(MainActivity.this, MapActivity.class);
+                                startActivity(mapIntent);
 
                                 Toast.makeText(MainActivity.this, "Logged in!",
                                         Toast.LENGTH_SHORT).show();
@@ -59,8 +66,6 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                                 Toast.makeText(MainActivity.this, "Authentication failed.",
                                         Toast.LENGTH_SHORT).show();
                             }
-
-                            // ...
                         }
 
                     });
@@ -68,6 +73,46 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
 
 
 
+    }
+
+    @Override
+    public void OnSignUpDataPass(String username, String email, String password){
+        signupUsername = username;
+        signupEmail = email;
+        signupPassword = password;
+
+
+        if(signupUsername != null || signupEmail != null || signupPassword != null){
+            mAuth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                // Sign in success, update UI with the signed-in user's information
+                                Log.d(TAG, "createUserWithEmail:success");
+                                FirebaseUser user = mAuth.getCurrentUser();
+
+                                // Change to Map Fragment - possibly move back to Activity
+//                                Fragment frag = new GPSFragment();
+//                                FragmentManager manager = getSupportFragmentManager();
+//                                manager.beginTransaction()
+//                                        .replace(R.id.content_test, frag)
+//                                        .commit();
+
+                                Intent mapIntent = new Intent(MainActivity.this, MapActivity.class);
+                                startActivity(mapIntent);
+
+                            } else {
+                                // If sign in fails, display a message to the user.
+                                Log.w(TAG, "createUserWithEmail:failure", task.getException());
+                                Toast.makeText(MainActivity.this, "Authentication failed.",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+
+                            // ...
+                        }
+                    });
+        }
     }
 
     @Override
