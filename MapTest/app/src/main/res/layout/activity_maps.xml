@@ -18,37 +18,38 @@
     <Button
         android:id="@+id/Mark_Location"
         android:layout_width="96dp"
-        android:layout_height="56dp"
+        android:layout_height="58dp"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
         android:text="Mark Location"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/Start_Route"
+        app:layout_constraintEnd_toStartOf="@+id/Start_Pause_Route"
         tools:text="Mark Location" />
 
     <Button
-        android:id="@+id/Start_Route"
-        android:layout_width="79dp"
-        android:layout_height="58dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginRight="12dp"
-        android:text="Start Route"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/Pause_Route"
-        tools:text="Start Route" />
-
-    <Button
-        android:id="@+id/Pause_Route"
-        android:layout_width="79dp"
+        android:id="@+id/Start_Pause_Route"
+        android:layout_width="120dp"
         android:layout_height="58dp"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
-        android:text="Pause Route"
+        android:text="Start/Pause Route"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toStartOf="@+id/Save_Route_Button"
+        tools:text="Start/Pause Route" />
+
+    <Button
+        android:id="@+id/Save_Route_Button"
+        android:layout_width="96dp"
+        android:layout_height="58dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:text="Save Route"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="Save Route" />
 
     <TextView
         android:id="@+id/Distance_Text"

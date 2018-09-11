@@ -10,6 +10,12 @@
         android:layout_height="wrap_content"
         android:hint="Title"/>
 
+    <EditText
+        android:id="@+id/snippet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Description"/>
+
     <Button
         android:id="@+id/btnCamera"
         android:layout_width="180dp"

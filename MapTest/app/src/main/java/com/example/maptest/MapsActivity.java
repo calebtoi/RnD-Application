@@ -29,6 +29,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -43,8 +44,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private LocationRequest mLocationRequest;
     private LocationCallback mLocationCallback;
-    private ArrayList<Location> coordinates = new ArrayList();
-    private ArrayList<MarkerOptions> pointsOfInterests = new ArrayList();
+    private ArrayList<Location> currentRoute = new ArrayList<>();
+    private ArrayList<Marker> pointsOfInterests = new ArrayList<>();
+    private ArrayList<HikingRoute> hikingRoutes = new ArrayList<>();
+
+    private boolean paused = false;
 
 
     private long UPDATE_INTERVAL = 10000; //10 sec
@@ -73,6 +77,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 onLocationChanged(locationResult.getLastLocation());
             };
         };
+
         distanceInMetersTextView = findViewById(R.id.Distance_Text);
 
         final Button markLocationButton = findViewById(R.id.Mark_Location);
@@ -83,27 +88,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        final Button startLocationUpdatesButton = findViewById(R.id.Start_Route);
+        final Button startLocationUpdatesButton = findViewById(R.id.Start_Pause_Route);
         startLocationUpdatesButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                Toast toast;
-                toast = Toast.makeText(getApplicationContext(), "Now tracking for your route", Toast.LENGTH_SHORT);
-                toast.show();
-                startLocationUpdates();
+                if(paused == false){
+                    Toast toast;
+                    toast = Toast.makeText(getApplicationContext(), "Now tracking for your route", Toast.LENGTH_SHORT);
+                    toast.show();
+                    startLocationUpdates();
+                    paused = true;
+                }else{
+                    Toast toast;
+                    toast = Toast.makeText(getApplicationContext(), "Paused", Toast.LENGTH_SHORT);
+                    toast.show();
+                    stopLocationUpdates();
+                    paused = false;
+                }
             }
         });
 
-        final Button pauseLocationUpdatesButton = findViewById(R.id.Pause_Route);
-        pauseLocationUpdatesButton.setOnClickListener(new View.OnClickListener() {
+        final Button saveRouteButton = findViewById(R.id.Save_Route_Button);
+        saveRouteButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                Toast toast;
-                toast = Toast.makeText(getApplicationContext(), "Paused", Toast.LENGTH_SHORT);
-                toast.show();
-                stopLocationUpdates();
+                hikingRoutes.add(new HikingRoute("temp name",
+                        currentRoute.toArray(new Location[currentRoute.size()]),
+                        pointsOfInterests.toArray(new Marker[pointsOfInterests.size()])));
+                mMap.clear();
             }
         });
+
+//        final Button pauseLocationUpdatesButton = findViewById(R.id.Pause_Route);
+//        pauseLocationUpdatesButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Toast toast;
+//                toast = Toast.makeText(getApplicationContext(), "Paused", Toast.LENGTH_SHORT);
+//                toast.show();
+//                stopLocationUpdates();
+//            }
+//        });
     }
 
     private void stopLocationUpdates(){
@@ -119,21 +144,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //        Random r = new Random();
 //        int i1 = r.nextInt(100 - 1) + 1;
         distanceInMetersTextView.setText(Float.toString(distanceInMetersFloat));
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        switch(requestCode) {
-            case (EDIT_REQUEST) : {
-                if (resultCode == Activity.RESULT_OK) {
-                    MarkerOptions markerOptions = data.getParcelableExtra("marker");
-                    pointsOfInterests.add(markerOptions);
-                    mMap.addMarker(markerOptions);
-                }
-                break;
-            }
-        }
     }
 
     //Trigger new location updates at interval
@@ -188,20 +198,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
 
         //LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
-        coordinates.add(location);
+        currentRoute.add(location);
 
-        msg = "Array size: "+ coordinates.size();
+        msg = "Array size: "+ currentRoute.size();
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
 
-        if (coordinates.size() >= 2){
+        if (currentRoute.size() >= 2){
             drawRoute();
         }
     }
 
     public void drawRoute(){
         //create polylines between gps locations
-        Location previousLocation = coordinates.get(coordinates.size() - 2);
-        Location currentLocation = coordinates.get(coordinates.size() - 1);
+        Location previousLocation = currentRoute.get(currentRoute.size() - 2);
+        Location currentLocation = currentRoute.get(currentRoute.size() - 1);
 
         LatLng temp1 = new LatLng(previousLocation.getLatitude(), previousLocation.getLongitude());
         LatLng temp2 = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
@@ -239,7 +249,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         if (location != null) {
                             onLocationChanged(location);
                             LatLng poi = new LatLng(location.getLatitude(), location.getLongitude());
-                            coordinates.add(location);
+                            currentRoute.add(location);
 
                             Intent edit = new Intent(MapsActivity.this, EditMarker.class);
                             edit.putExtra("location", poi);
@@ -254,7 +264,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         e.printStackTrace();
                     }
                 });
+    }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch(requestCode) {
+            case (EDIT_REQUEST) : {
+                if (resultCode == Activity.RESULT_OK) {
+                    MarkerOptions markerOptions = data.getParcelableExtra("marker");
+                    //pointsOfInterests.add(markerOptions);
+                    Marker marker = mMap.addMarker(markerOptions);
+                    marker.showInfoWindow();
+                    pointsOfInterests.add(marker);
+
+                }
+                break;
+            }
+        }
     }
 
     @Override
