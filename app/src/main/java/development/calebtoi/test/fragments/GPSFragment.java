@@ -70,7 +70,7 @@ public class GPSFragment extends Fragment implements OnMapReadyCallback{
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        startLocationUpdates();
+        //startLocationUpdates();
 
         logoutButton.setOnClickListener(new View.OnClickListener(){
             @Override

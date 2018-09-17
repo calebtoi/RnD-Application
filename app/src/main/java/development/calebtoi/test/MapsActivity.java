@@ -51,8 +51,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean paused = false;
 
 
-    private long UPDATE_INTERVAL = 10000; //10 sec
-    private long FASTEST_INTERVAL = 10000; //10 sec
+    private long UPDATE_INTERVAL = 100000;
+    private long FASTEST_INTERVAL = 100000;
 
     private static final int EDIT_REQUEST = 1;
 
@@ -118,17 +118,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.clear();
             }
         });
-
-//        final Button pauseLocationUpdatesButton = findViewById(R.id.Pause_Route);
-//        pauseLocationUpdatesButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Toast toast;
-//                toast = Toast.makeText(getApplicationContext(), "Paused", Toast.LENGTH_SHORT);
-//                toast.show();
-//                stopLocationUpdates();
-//            }
-//        });
     }
 
     private void stopLocationUpdates(){
@@ -141,8 +130,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void calculateDistance(Location loc1, Location loc2){
         float distance = loc1.distanceTo(loc2);
         distanceInMetersFloat = distance + distanceInMetersFloat;
-//        Random r = new Random();
-//        int i1 = r.nextInt(100 - 1) + 1;
         distanceInMetersTextView.setText(Float.toString(distanceInMetersFloat));
     }
 
@@ -166,7 +153,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         settingsClient.checkLocationSettings(locationSettingsRequest);
 
         //Permission
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
@@ -175,20 +163,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
             return;
+        }else{
+            //new Google API SDK v11 uses getFusedLocationProviderClient(this)
+            getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
         }
-        //new Google API SDK v11 uses getFusedLocationProviderClient(this)
-        getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
     }
-
-    /*
-    new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                //do work here
-                onLocationChanged(locationResult.getLastLocation());
-            }
-        }
-     */
 
     public void onLocationChanged(Location location) {
         //New location has now been determined
@@ -289,7 +268,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
 
         if (checkPermissions()) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 // TODO: Consider calling
                 //    ActivityCompat#requestPermissions
                 // here to request the missing permissions, and then overriding
