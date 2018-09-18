@@ -1,4 +1,4 @@
-package development.calebtoi.test;
+package com.example.maptest;
 
 import android.app.Activity;
 import android.content.Context;
