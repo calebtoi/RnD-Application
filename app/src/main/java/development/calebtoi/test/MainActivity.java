@@ -15,7 +15,7 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import development.calebtoi.test.fragments.GPSFragment;
+import development.calebtoi.test.fragments.MenuFragment;
 import development.calebtoi.test.fragments.LoginFragment;
 import development.calebtoi.test.fragments.SignupFragment;
 
@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                                 Log.d(TAG, "signInWithEmail:success");
                                 FirebaseUser user = mAuth.getCurrentUser();
 
-//                                Fragment frag = new GPSFragment();
+//                                Fragment frag = new MenuFragment();
 //                                FragmentManager manager = getSupportFragmentManager();
 //                                manager.beginTransaction()
 //                                        .replace(R.id.content_test, frag)
@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                                 FirebaseUser user = mAuth.getCurrentUser();
 
                                 // Change to Map Fragment - possibly move back to Activity
-//                                Fragment frag = new GPSFragment();
+//                                Fragment frag = new MenuFragment();
 //                                FragmentManager manager = getSupportFragmentManager();
 //                                manager.beginTransaction()
 //                                        .replace(R.id.content_test, frag)
@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     // User is signed in
-                    Fragment frag = new GPSFragment();
+                    Fragment frag = new MenuFragment();
                     FragmentManager manager = getSupportFragmentManager();
                     manager.beginTransaction()
                             .replace(R.id.content_test, frag)
