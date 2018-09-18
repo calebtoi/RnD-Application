@@ -3,11 +3,14 @@ package development.calebtoi.test;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -27,6 +30,8 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -41,6 +46,8 @@ import java.util.ArrayList;
 
 import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
+// TODO: Link to firebase database and authentication, design a way to save walks
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
@@ -50,6 +57,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ArrayList<Marker> pointsOfInterests = new ArrayList<>();
     private ArrayList<HikingRoute> hikingRoutes = new ArrayList<>();
 
+    private LocationManager manager;
+    private Location mLocation;
+    private Criteria mCriteria;
+
     private boolean paused = false;
 
 
@@ -57,11 +68,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private long FASTEST_INTERVAL = 100000;
 
     private static final int EDIT_REQUEST = 1;
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
     private TextView distanceInMetersTextView;
     private float distanceInMetersFloat = 0.0f;
-
-    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +99,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onLocationResult(LocationResult locationResult) {
                 if (locationResult != null) {
                     onLocationChanged(locationResult.getLastLocation());
+                    updateCameraLocation(locationResult.getLastLocation());
                 }
             };
         };
@@ -103,7 +114,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         startLocationUpdatesButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                if(paused == false){
+                if(!paused){
                     Toast toast;
                     toast = Toast.makeText(getApplicationContext(), "Now tracking for your route", Toast.LENGTH_SHORT);
                     toast.show();
@@ -119,7 +130,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-
+        // TODO: save route
         saveRouteButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
@@ -129,7 +140,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.clear();
             }
         });
+
     }
+
 
     private void stopLocationUpdates(){
         getFusedLocationProviderClient(this).removeLocationUpdates(mLocationCallback);
@@ -204,7 +217,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             .color(Color.RED));
 
         calculateDistance(previousLocation, currentLocation);
-        //calculateDistance();
     }
 
     public void markLocation() {
@@ -219,7 +231,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         public void onSuccess(Location location) {
                             //GPS location can be null if GPS is switched off
                             if (location != null) {
-                                onLocationChanged(location);
+                                updateCameraLocation(location);
                                 LatLng poi = new LatLng(location.getLatitude(), location.getLongitude());
                                 currentRoute.add(location);
 
@@ -248,11 +260,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             case (EDIT_REQUEST) : {
                 if (resultCode == Activity.RESULT_OK) {
                     MarkerOptions markerOptions = data.getParcelableExtra("marker");
-                    //pointsOfInterests.add(markerOptions);
                     Marker marker = mMap.addMarker(markerOptions);
                     marker.showInfoWindow();
                     pointsOfInterests.add(marker);
-
                 }
                 break;
             }
@@ -265,18 +275,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Has to be wrapped in a permission checker
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            googleMap.setMyLocationEnabled(true);
+            mMap.setMyLocationEnabled(true);
+
+            // Move Camera
+            manager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+            mCriteria = new Criteria();
+            String bestProvider = String.valueOf(manager.getBestProvider(mCriteria, true));
+            mLocation = manager.getLastKnownLocation(bestProvider);
+
+            if(mLocation != null){
+                updateCameraLocation(mLocation);
+            } else {
+                // TODO: handle error
+            }
+
         } else {
             // TODO: add something to handle when a user hasn't approved permissions
         }
     }
-    
+
     // ACCESS_FINE_LOCATION apparently allows access to coarse location as well
     public boolean checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
+            // Opens up a dialog that notifys the user about the permissions the app needs
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
                 // TODO: improve
@@ -305,5 +329,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    // Updates camera to follow location on the map
+    // TODO: need to find where to implement this effectively
+    public void updateCameraLocation(Location location){
+        LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
+        float zoomLevel = 16.0f;
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, zoomLevel));
+    }
 
+
+    // TODO: return user to a new dashboard screen
+    // When back is pressed, with return the user to the placeholder logout screen
+    @Override
+    public void onBackPressed() {
+        Intent intent;
+        intent = new Intent(MapsActivity.this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        finish();
+        startActivity(intent);
+    }
 }

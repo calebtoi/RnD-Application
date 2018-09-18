@@ -4,6 +4,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+
+    <!--
+        Displays information about a POI on the walk
+        TODO: improve the design, find things to add to make it more interesting
+    -->
+
     <TextView
         android:id="@+id/name"
         android:layout_width="wrap_content"
