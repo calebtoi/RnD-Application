@@ -2,6 +2,8 @@ package development.calebtoi.test;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -59,28 +61,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private TextView distanceInMetersTextView;
     private float distanceInMetersFloat = 0.0f;
 
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+
+        if(checkLocationPermission()){
+            // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.map);
+            mapFragment.getMapAsync(this);
+
+        } else {
+            // TODO: add handler
+        }
+
+        // Initialise XML objects
+        final Button markLocationButton = findViewById(R.id.Mark_Location);
+        final Button startLocationUpdatesButton = findViewById(R.id.Start_Pause_Route);
+        final Button saveRouteButton = findViewById(R.id.Save_Route_Button);
+        distanceInMetersTextView = findViewById(R.id.Distance_Text);
 
         mLocationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
-                if (locationResult == null) {
-                    return;
+                if (locationResult != null) {
+                    onLocationChanged(locationResult.getLastLocation());
                 }
-                onLocationChanged(locationResult.getLastLocation());
             };
         };
 
-        distanceInMetersTextView = findViewById(R.id.Distance_Text);
-
-        final Button markLocationButton = findViewById(R.id.Mark_Location);
         markLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -88,7 +100,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        final Button startLocationUpdatesButton = findViewById(R.id.Start_Pause_Route);
         startLocationUpdatesButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
@@ -108,7 +119,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        final Button saveRouteButton = findViewById(R.id.Save_Route_Button);
+
         saveRouteButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
@@ -153,19 +164,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         settingsClient.checkLocationSettings(locationSettingsRequest);
 
         //Permission
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }else{
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             //new Google API SDK v11 uses getFusedLocationProviderClient(this)
             getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+        }else{
+            // TODO: add something to handle when a user hasn't approved permissions
         }
     }
 
@@ -208,41 +211,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //Get last known recent location using new Google Play Sevices SDK (v11+)
         FusedLocationProviderClient locationClient = getFusedLocationProviderClient(this);
 
-        //Permission
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        locationClient.getLastLocation()
-                .addOnSuccessListener(new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        //GPS location can be null if GPS is switched off
-                        if (location != null) {
-                            onLocationChanged(location);
-                            LatLng poi = new LatLng(location.getLatitude(), location.getLongitude());
-                            currentRoute.add(location);
+        // Has to wrapped in a permission checker
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationClient.getLastLocation()
+                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            //GPS location can be null if GPS is switched off
+                            if (location != null) {
+                                onLocationChanged(location);
+                                LatLng poi = new LatLng(location.getLatitude(), location.getLongitude());
+                                currentRoute.add(location);
 
-                            Intent edit = new Intent(MapsActivity.this, EditMarker.class);
-                            edit.putExtra("location", poi);
-                            MapsActivity.this.startActivityForResult(edit, EDIT_REQUEST);
+                                Intent edit = new Intent(MapsActivity.this, EditMarker.class);
+                                edit.putExtra("location", poi);
+                                MapsActivity.this.startActivityForResult(edit, EDIT_REQUEST);
+                            }
                         }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d("MapsActivity", "Error trying to get last GPS location");
-                        e.printStackTrace();
-                    }
-                });
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.d("MapsActivity", "Error trying to get last GPS location");
+                            e.printStackTrace();
+                        }
+                    });
+        } else {
+            // TODO: add something to handle when a user hasn't approved permissions
+        }
     }
 
     @Override
@@ -267,28 +263,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        if (checkPermissions()) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return;
-            }
+        // Has to be wrapped in a permission checker
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             googleMap.setMyLocationEnabled(true);
+        } else {
+            // TODO: add something to handle when a user hasn't approved permissions
+        }
+    }
+    
+    // ACCESS_FINE_LOCATION apparently allows access to coarse location as well
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+                // TODO: improve
+                new AlertDialog.Builder(this)
+                        .setTitle("TITLE")
+                        .setMessage("EXPLANATION")
+                        .setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Prompt the user once explanation has been shown
+                                ActivityCompat.requestPermissions(MapsActivity.this,
+                                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                        MY_PERMISSIONS_REQUEST_LOCATION);
+                            }
+                        })
+                        .create()
+                        .show();
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            }
+            return false;
+        } else {
+            return true;
         }
     }
 
-    private boolean checkPermissions() {
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+
 }
