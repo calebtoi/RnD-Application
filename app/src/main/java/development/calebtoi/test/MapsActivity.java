@@ -30,7 +30,6 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.SettingsClient;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -41,8 +40,15 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import development.calebtoi.test.datamodels.HikingRoute;
+import development.calebtoi.test.datamodels.LocationModel;
+import development.calebtoi.test.datamodels.POIModel;
 
 import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
@@ -55,7 +61,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationCallback mLocationCallback;
     private ArrayList<Location> currentRoute = new ArrayList<>();
     private ArrayList<Marker> pointsOfInterests = new ArrayList<>();
-    private ArrayList<HikingRoute> hikingRoutes = new ArrayList<>();
+
+    // Saving Hiking Route
+    private List<LocationModel> routeSave = new ArrayList<>();
+    private List<POIModel> poiSave = new ArrayList<>();
+    private HikingRoute hikingRouteSave;
 
     private LocationManager manager;
     private Location mLocation;
@@ -63,6 +73,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private boolean paused = false;
 
+    // Firebase Database
+    FirebaseDatabase database;
+    DatabaseReference rootRef;
 
     private long UPDATE_INTERVAL = 100000;
     private long FASTEST_INTERVAL = 100000;
@@ -78,6 +91,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+        /** FIREBASE DATABASE **/
+        database = FirebaseDatabase.getInstance();
+        rootRef = database.getReference();
+
         if(checkLocationPermission()){
             // Obtain the SupportMapFragment and get notified when the map is ready to be used.
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -89,9 +106,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         // Initialise XML objects
-        final Button markLocationButton = findViewById(R.id.Mark_Location);
-        final Button startLocationUpdatesButton = findViewById(R.id.Start_Pause_Route);
-        final Button saveRouteButton = findViewById(R.id.Save_Route_Button);
+        final Button markLocationButton = findViewById(R.id.markButton);
+        final Button startLocationUpdatesButton = findViewById(R.id.startButton);
+        final Button pauseLocationUpdatesButton = findViewById(R.id.pauseButton);
+        final Button saveRouteButton = findViewById(R.id.stopButton);
         distanceInMetersTextView = findViewById(R.id.Distance_Text);
 
         mLocationCallback = new LocationCallback() {
@@ -111,32 +129,49 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        // Starts Tracking Route
         startLocationUpdatesButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                if(!paused){
-                    Toast toast;
-                    toast = Toast.makeText(getApplicationContext(), "Now tracking for your route", Toast.LENGTH_SHORT);
-                    toast.show();
+                    Toast.makeText(getApplicationContext(), "Now tracking your route!", Toast.LENGTH_LONG).show();
                     startLocationUpdates();
-                    paused = true;
-                }else{
-                    Toast toast;
-                    toast = Toast.makeText(getApplicationContext(), "Paused", Toast.LENGTH_SHORT);
-                    toast.show();
+                    paused = false;
+            }
+        });
+
+        // Pauses Route
+        pauseLocationUpdatesButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!paused){
+                    Toast.makeText(getApplicationContext(), "Route tracking is paused!", Toast.LENGTH_LONG).show();
                     stopLocationUpdates();
+                    pauseLocationUpdatesButton.setText("Resume Route");
+                    paused = true;
+                } else {
+                    Toast.makeText(getApplicationContext(), "Now tracking your route!", Toast.LENGTH_LONG).show();
+                    startLocationUpdates();
+                    pauseLocationUpdatesButton.setText("Pause Route");
                     paused = false;
                 }
             }
         });
 
+
         // TODO: save route
         saveRouteButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                hikingRoutes.add(new HikingRoute("temp name",
-                        currentRoute.toArray(new Location[currentRoute.size()]),
-                        pointsOfInterests.toArray(new Marker[pointsOfInterests.size()])));
+//                hikingRoutes.add(new HikingRoute("temp name",
+//                        currentRoute.toArray(new Location[currentRoute.size()]),
+//                        pointsOfInterests.toArray(new Marker[pointsOfInterests.size()])));
+
+                // Saves Route to Database
+                hikingRouteSave = new HikingRoute("test", routeSave, poiSave);
+                rootRef.child("HikingRoute").setValue(hikingRouteSave);
+
+                paused = false;
+                stopLocationUpdates();
                 mMap.clear();
             }
         });
@@ -151,6 +186,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         toast.show();
     }
 
+    // TODO: fix pause problem where it adds the distance twice
     public void calculateDistance(Location loc1, Location loc2){
         float distance = loc1.distanceTo(loc2);
         distanceInMetersFloat = distance + distanceInMetersFloat;
@@ -187,16 +223,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void onLocationChanged(Location location) {
         //New location has now been determined
-        String msg = "Updated Location: " +
+        Log.d("LOCATION CHANGED",
+                "Updated Location: " +
                 Double.toString(location.getLatitude()) + "," +
-                Double.toString(location.getLongitude());
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                Double.toString(location.getLongitude()));
 
-        //LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
         currentRoute.add(location);
 
-        msg = "Array size: "+ currentRoute.size();
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        /** Location model to save route **/
+        LocationModel tempLocationModel = new LocationModel(location.getLatitude(), location.getLongitude());
+        routeSave.add(tempLocationModel);
+
+        Log.d("LOCATION CHANGED", "Array size: "+ currentRoute.size());
 
         if (currentRoute.size() >= 2){
             drawRoute();
@@ -233,6 +271,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             if (location != null) {
                                 updateCameraLocation(location);
                                 LatLng poi = new LatLng(location.getLatitude(), location.getLongitude());
+                                LocationModel tempLoc = new LocationModel(location.getLatitude(), location.getLongitude());
+
+
+                                routeSave.add(tempLoc);
                                 currentRoute.add(location);
 
                                 Intent edit = new Intent(MapsActivity.this, EditMarker.class);
@@ -262,7 +304,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     MarkerOptions markerOptions = data.getParcelableExtra("marker");
                     Marker marker = mMap.addMarker(markerOptions);
                     marker.showInfoWindow();
-                    pointsOfInterests.add(marker);
+
+                    LocationModel tempLoc = new LocationModel(marker.getPosition().latitude, marker.getPosition().longitude);
+                    POIModel tempPOI = new POIModel(marker.getTitle(), tempLoc);
+                    poiSave.add(tempPOI);
+
                 }
                 break;
             }

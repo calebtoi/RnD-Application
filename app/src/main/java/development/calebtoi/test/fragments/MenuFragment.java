@@ -12,7 +12,6 @@ import android.widget.Button;
 ;
 import com.google.firebase.auth.FirebaseAuth;
 
-import development.calebtoi.test.MainActivity;
 import development.calebtoi.test.MapsActivity;
 import development.calebtoi.test.R;
 

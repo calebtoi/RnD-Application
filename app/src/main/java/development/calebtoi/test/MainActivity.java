@@ -36,11 +36,12 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
     @Override
     public void OnLoginDataPass(String email, String password){
 
-        if(email != null || password != null){
-            loginEmail = email;
-            loginPassword = password;
+        loginEmail = email;
+        loginPassword = password;
 
-            mAuth.signInWithEmailAndPassword(email, password)
+        if(loginEmail != null || loginPassword != null){
+
+            mAuth.signInWithEmailAndPassword(loginEmail, loginPassword)
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
@@ -48,12 +49,6 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                                 // Sign in success
                                 Log.d(TAG, "signInWithEmail:success");
                                 FirebaseUser user = mAuth.getCurrentUser();
-
-//                                Fragment frag = new MenuFragment();
-//                                FragmentManager manager = getSupportFragmentManager();
-//                                manager.beginTransaction()
-//                                        .replace(R.id.content_test, frag)
-//                                        .commit();
 
                                 Intent mapIntent = new Intent(MainActivity.this, MapsActivity.class);
                                 startActivity(mapIntent);
@@ -91,13 +86,6 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                                 // Sign in success, update UI with the signed-in user's information
                                 Log.d(TAG, "createUserWithEmail:success");
                                 FirebaseUser user = mAuth.getCurrentUser();
-
-                                // Change to Map Fragment - possibly move back to Activity
-//                                Fragment frag = new MenuFragment();
-//                                FragmentManager manager = getSupportFragmentManager();
-//                                manager.beginTransaction()
-//                                        .replace(R.id.content_test, frag)
-//                                        .commit();
 
                                 Intent mapIntent = new Intent(MainActivity.this, MapsActivity.class);
                                 startActivity(mapIntent);

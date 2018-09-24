@@ -94,6 +94,7 @@ public class SignupFragment extends Fragment {
                 FragmentManager manager = getFragmentManager();
                 manager.beginTransaction()
                         .replace(R.id.content_test, frag)
+                        .addToBackStack(null)
                         .commit();
             }
         });
