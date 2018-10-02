@@ -6,4 +6,6 @@
     <files-path
         name="files"
         path="/" />
+    <external-path name="my_images"
+        path="Android/data/com.example.adventuresharer/files/Pictures" />
 </paths>
