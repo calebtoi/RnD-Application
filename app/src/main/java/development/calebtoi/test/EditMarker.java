@@ -13,6 +13,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 public class EditMarker extends Activity {
     private String title;
+    private String snippet;
 
 
     @Override
@@ -23,6 +24,7 @@ public class EditMarker extends Activity {
         final LatLng latlng = getIntent().getParcelableExtra("location");
 
         final EditText titleField = findViewById(R.id.titleMarker);
+        final EditText snippetField = findViewById(R.id.snippetMarker);
         Button saveButton = findViewById(R.id.save);
 
         saveButton.setOnClickListener(new View.OnClickListener() {
@@ -30,10 +32,14 @@ public class EditMarker extends Activity {
             public void onClick(final View view) {
 
                 title = titleField.getText().toString();
+                snippet = snippetField.getText().toString();
 
                 MarkerOptions marker = new MarkerOptions().position(latlng);
                 if (title != null) {
                     marker.title(title);
+                    if(snippet != null) {
+                        marker.snippet(snippet);
+                    }
                 }
 
                 Intent resultIntent = new Intent();

@@ -5,11 +5,26 @@
     android:orientation="vertical"
     android:gravity="center">
 
-    <EditText
-        android:id="@+id/titleMarker"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="280dp"
         android:layout_height="wrap_content"
-        android:hint="Title"/>
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/titleMarker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Title"/>
+
+        <EditText
+            android:id="@+id/snippetMarker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description"/>
+
+    </LinearLayout>
+
+
 
     <Button
         android:id="@+id/save"

@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -33,6 +34,7 @@ import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -40,6 +42,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -54,13 +57,12 @@ import static com.google.android.gms.location.LocationServices.getFusedLocationP
 
 // TODO: Link to firebase database and authentication, design a way to save walks
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback{
 
     private GoogleMap mMap;
     private LocationRequest mLocationRequest;
     private LocationCallback mLocationCallback;
     private ArrayList<Location> currentRoute = new ArrayList<>();
-    private ArrayList<Marker> pointsOfInterests = new ArrayList<>();
 
     // Saving Hiking Route
     private List<LocationModel> routeSave = new ArrayList<>();
@@ -72,10 +74,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Criteria mCriteria;
 
     private boolean paused = false;
+    private boolean pressed = false;
 
     // Firebase Database
     FirebaseDatabase database;
-    DatabaseReference rootRef;
+    DatabaseReference hikingRef;
+
+    private String hikingRouteKey = "hikingKey";
+    private String userID = "user";
 
     private long UPDATE_INTERVAL = 100000;
     private long FASTEST_INTERVAL = 100000;
@@ -93,7 +99,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         /** FIREBASE DATABASE **/
         database = FirebaseDatabase.getInstance();
-        rootRef = database.getReference();
+        hikingRef = database.getReference().child("HikingRoutes");
+
+        userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         if(checkLocationPermission()){
             // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -158,17 +166,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
 
-        // TODO: save route
+        // TODO: create a window for users to edit and add information
         saveRouteButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-//                hikingRoutes.add(new HikingRoute("temp name",
-//                        currentRoute.toArray(new Location[currentRoute.size()]),
-//                        pointsOfInterests.toArray(new Marker[pointsOfInterests.size()])));
-
-                // Saves Route to Database
-                hikingRouteSave = new HikingRoute("test", routeSave, poiSave);
-                rootRef.child("HikingRoute").setValue(hikingRouteSave);
+                // Generates ID for current route
+                hikingRouteKey = hikingRef.push().getKey();
+                // Creates a router object
+                hikingRouteSave = new HikingRoute("test", userID, routeSave, poiSave);
+                // Saves object to the Firebase database
+                hikingRef.child(hikingRouteKey).setValue(hikingRouteSave);
 
                 paused = false;
                 stopLocationUpdates();
@@ -303,10 +310,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (resultCode == Activity.RESULT_OK) {
                     MarkerOptions markerOptions = data.getParcelableExtra("marker");
                     Marker marker = mMap.addMarker(markerOptions);
-                    marker.showInfoWindow();
+
 
                     LocationModel tempLoc = new LocationModel(marker.getPosition().latitude, marker.getPosition().longitude);
-                    POIModel tempPOI = new POIModel(marker.getTitle(), tempLoc);
+                    POIModel tempPOI = new POIModel(marker.getTitle(), marker.getSnippet(), tempLoc);
                     poiSave.add(tempPOI);
 
                 }
@@ -328,6 +335,44 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mCriteria = new Criteria();
             String bestProvider = String.valueOf(manager.getBestProvider(mCriteria, true));
             mLocation = manager.getLastKnownLocation(bestProvider);
+
+
+            CustomInfoWindowGoogleMap customInfoWindow = new CustomInfoWindowGoogleMap(this);
+            mMap.setInfoWindowAdapter(customInfoWindow);
+
+            // Shows an hides infowindow when pressed
+            mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+                @Override
+                public void onInfoWindowClick(Marker marker) {
+                    if(!pressed){
+                        pressed = true;
+                    }
+
+                    if (pressed) {
+                        marker.hideInfoWindow();
+                        pressed = false;
+                    }
+                }
+            });
+
+            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                @Override
+                public boolean onMarkerClick(Marker marker) {
+                    final int dX = getResources().getDimensionPixelSize(R.dimen.map_dx);
+                    final int dY = getResources().getDimensionPixelSize(R.dimen.map_dy);
+                    final Projection projection = mMap.getProjection();
+                    final Point markerPoint = projection.toScreenLocation(
+                            marker.getPosition()
+                    );
+                    markerPoint.offset(dX, dY);
+                    final LatLng newLatLng = projection.fromScreenLocation(markerPoint);
+                    mMap.animateCamera(CameraUpdateFactory.newLatLng(newLatLng));
+
+                    marker.showInfoWindow();
+
+                    return true;
+                }
+            });
 
             if(mLocation != null){
                 updateCameraLocation(mLocation);
@@ -384,7 +429,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    // TODO: return user to a new dashboard screen
     // When back is pressed, with return the user to the placeholder logout screen
     @Override
     public void onBackPressed() {
@@ -394,4 +438,5 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         finish();
         startActivity(intent);
     }
+
 }

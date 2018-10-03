@@ -30,7 +30,7 @@ public class MenuFragment extends Fragment{
         view = inflater.inflate(R.layout.fragment_menu, container, false);
 
         logoutButton = view.findViewById(R.id.buttonLogout);
-        mapsButton = view.findViewById(R.id.buttonMaps);
+        mapsButton = view.findViewById(R.id.buttonNewRoute);
 
         logoutButton.setOnClickListener(new View.OnClickListener(){
             @Override

@@ -11,8 +11,9 @@ public class POIModel {
 
     public POIModel(){}
 
-    public POIModel(String title, LocationModel loc) {
+    public POIModel(String title, String desc, LocationModel loc) {
         this.title = title;
+        this.description = desc;
         this.location = loc;
     }
 
