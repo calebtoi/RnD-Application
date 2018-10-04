@@ -12,6 +12,7 @@ import android.graphics.Point;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -45,12 +46,17 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import development.calebtoi.test.datamodels.HikingRoute;
 import development.calebtoi.test.datamodels.LocationModel;
+import development.calebtoi.test.datamodels.POIImage;
 import development.calebtoi.test.datamodels.POIModel;
 
 import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
@@ -67,6 +73,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     // Saving Hiking Route
     private List<LocationModel> routeSave = new ArrayList<>();
     private List<POIModel> poiSave = new ArrayList<>();
+    private List<POIImage> poiImageSave = new ArrayList<>();
     private HikingRoute hikingRouteSave;
 
     private LocationManager manager;
@@ -79,6 +86,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     // Firebase Database
     FirebaseDatabase database;
     DatabaseReference hikingRef;
+    StorageReference mStorage;
 
     private String hikingRouteKey = "hikingKey";
     private String userID = "user";
@@ -100,6 +108,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         /** FIREBASE DATABASE **/
         database = FirebaseDatabase.getInstance();
         hikingRef = database.getReference().child("HikingRoutes");
+        mStorage = FirebaseStorage.getInstance().getReference().child("POI_Images");
 
         userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
@@ -177,6 +186,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 // Saves object to the Firebase database
                 hikingRef.child(hikingRouteKey).setValue(hikingRouteSave);
 
+                /** Loop through all the POI images within list **/
+                if(poiImageSave != null) {
+                    for(int i=0; i < poiImageSave.size(); i++) {
+                        if(poiImageSave.get(i) != null){
+//                            Toast.makeText(MapsActivity.this, poiImageSave.get(i).getPoiID(), Toast.LENGTH_SHORT).show();
+                            uploadImage(poiImageSave.get(i));
+                        }
+
+                    }
+                }
+
+
                 paused = false;
                 stopLocationUpdates();
                 mMap.clear();
@@ -186,11 +207,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
+    /** Method used to upload images to Firebase **/
+    private void uploadImage(POIImage poiI) {
+        StorageReference imageRef = mStorage.child(poiI.getPoiID());
+                imageRef.putFile(poiI.getImageUri())
+                        .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                    Toast.makeText(getApplicationContext(), "File Uploading..Please wait! ",
+                                            Toast.LENGTH_SHORT).show();
+
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                                //if the upload is not successful
+                                Toast.makeText(getApplicationContext(), exception.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        })
+                        .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                                // You can show your progress bar here \\
+                            }
+                        });
+
+
+    }
+
+
     private void stopLocationUpdates(){
         getFusedLocationProviderClient(this).removeLocationUpdates(mLocationCallback);
-        Toast toast;
-        toast = Toast.makeText(getApplicationContext(), "inside stop location update", Toast.LENGTH_SHORT);
-        toast.show();
     }
 
     // TODO: fix pause problem where it adds the distance twice
@@ -308,12 +356,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         switch(requestCode) {
             case (EDIT_REQUEST) : {
                 if (resultCode == Activity.RESULT_OK) {
-                    MarkerOptions markerOptions = data.getParcelableExtra("marker");
+                    Bundle extras = data.getExtras();
+                    // Creates and adds marker to the map
+                    MarkerOptions markerOptions = extras.getParcelable("marker");
                     Marker marker = mMap.addMarker(markerOptions);
-
 
                     LocationModel tempLoc = new LocationModel(marker.getPosition().latitude, marker.getPosition().longitude);
                     POIModel tempPOI = new POIModel(marker.getTitle(), marker.getSnippet(), tempLoc);
+
+                    // Gets the image URL from the EditMarker Activity
+                    String image_path = extras.getString("imageURI");
+                    POIImage tempImage = new POIImage(Uri.parse("file://"+image_path), tempPOI.getPoiID());
+
+                    poiImageSave.add(tempImage);
                     poiSave.add(tempPOI);
 
                 }

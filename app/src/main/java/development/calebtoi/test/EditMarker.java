@@ -23,9 +23,17 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,9 +48,15 @@ import java.util.Locale;
 public class EditMarker extends Activity {
     private String title;
     private String snippet;
+    private String imageURI;
+
+    private String userID;
+    private StorageReference mStorage;
+
     private ImageView cameraImageView;
 
     private Bitmap bitmap;
+    private File photoFile;
     private final static String TAG = "Test";
     private static final int REQUEST_IMAGE_CAPTURE = 100;
     static final int REQUEST_ID_MULTIPLE_PERMISSIONS = 200;
@@ -56,6 +70,9 @@ public class EditMarker extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_marker);
+
+        userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        mStorage = FirebaseStorage.getInstance().getReference();
 
         if (Build.VERSION.SDK_INT < 23) {
             //Do not need to check the permission
@@ -75,6 +92,8 @@ public class EditMarker extends Activity {
             @Override
             public void onClick(final View view) {
 
+                Bundle extras = new Bundle();
+
                 title = titleField.getText().toString();
                 snippet = snippetField.getText().toString();
 
@@ -89,7 +108,14 @@ public class EditMarker extends Activity {
                 MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "title" , "description");
 
                 Intent resultIntent = new Intent();
-                resultIntent.putExtra("marker", marker);
+
+                extras.putParcelable("marker", marker);
+                if(photoFile != null) {
+                    imageURI = photoFile.toString();
+                    extras.putString("imageURI", imageURI);
+                }
+
+                resultIntent.putExtras(extras);
                 setResult(Activity.RESULT_OK, resultIntent);
                 finish();
             }
@@ -140,7 +166,7 @@ public class EditMarker extends Activity {
 
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             /* Create the File where the photo should go */
-            File photoFile = null;
+            photoFile = null;
             try {
                 photoFile = createImageFile();
             } catch (IOException ex) {
@@ -191,9 +217,6 @@ public class EditMarker extends Activity {
                 //this is full size image
                 Bitmap fullBitmap = MediaStore.Images.Media.getBitmap(contentResolver, photoURI);
 
-                if (fullBitmap.getWidth() > fullBitmap.getHeight()) {
-                    fullBitmap = rotate90(fullBitmap);
-                }
 
                 cameraImageView.setImageBitmap(fullBitmap);
                 cameraImageView.setVisibility(View.VISIBLE);
@@ -203,23 +226,6 @@ public class EditMarker extends Activity {
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
-    }
-
-    /*
-        Rotate 90 degree if the image is in landscape.
-     */
-    public Bitmap rotate90(Bitmap paramBitmap)
-    {
-        int rotateAngle = 90;
-        Matrix localMatrix = new Matrix();
-        float f1 = paramBitmap.getWidth() / 2;
-        float f2 = paramBitmap.getHeight() / 2;
-        localMatrix.postTranslate(-paramBitmap.getWidth() / 2, -paramBitmap.getHeight() / 2);
-        localMatrix.postRotate(rotateAngle);
-        localMatrix.postTranslate(f1, f2);
-        paramBitmap = Bitmap.createBitmap(paramBitmap, 0, 0, paramBitmap.getWidth(), paramBitmap.getHeight(), localMatrix, true);
-        new Canvas(paramBitmap).drawBitmap(paramBitmap, 0.0F, 0.0F, null);
-        return paramBitmap;
     }
 
     /*
@@ -253,7 +259,6 @@ public class EditMarker extends Activity {
     /*
         Set the personal album in DCIM
      */
-    @SuppressLint("NewApi")
     public File getAlbumStorageDir(String albumName) {
         // Get the directory for the user's public pictures directory.
         File file = new File(Environment.getExternalStoragePublicDirectory(
