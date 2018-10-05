@@ -2,7 +2,9 @@ package development.calebtoi.test;
 
 import android.app.Activity;
 import android.content.Context;
+import android.net.Uri;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -29,6 +31,13 @@ public class CustomInfoWindowGoogleMap implements GoogleMap.InfoWindowAdapter {
 
         TextView name = view.findViewById(R.id.infoWindowName);
         TextView desc = view.findViewById(R.id.infoWindowSnippet);
+        ImageView img = view.findViewById(R.id.infoWindowImage);
+
+        if(marker.getTag() != null ) {
+            String imgURI = marker.getTag().toString();
+            img.setImageURI(Uri.parse("file://" + imgURI));
+        }
+
 
         name.setText(marker.getTitle());
         desc.setText(marker.getSnippet());

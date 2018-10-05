@@ -13,6 +13,7 @@
 
         <!-- Image of the POI, only single image for now -->
         <ImageView
+            android:id="@+id/infoWindowImage"
             android:layout_width="match_parent"
             android:layout_height="200dp"
             android:contentDescription="hello"

@@ -7,8 +7,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -38,6 +40,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -83,6 +86,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean paused = false;
     private boolean pressed = false;
 
+    // XML Variables
+    private String stringStart;
+    private String stringPause;
+    private String stringResume;
+    private Drawable drawableStart;
+    private Drawable drawablePause;
+    private Drawable drawableResume;
+
     // Firebase Database
     FirebaseDatabase database;
     DatabaseReference hikingRef;
@@ -100,34 +111,43 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private TextView distanceInMetersTextView;
     private float distanceInMetersFloat = 0.0f;
 
+    private final String TAG = "MapsActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        /** FIREBASE DATABASE **/
+        // Used for Button logic
+        paused = false;
+
+        // FireBase Database Variables
         database = FirebaseDatabase.getInstance();
         hikingRef = database.getReference().child("HikingRoutes");
         mStorage = FirebaseStorage.getInstance().getReference().child("POI_Images");
 
+        // Retrieves User ID from FireBase
         userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         if(checkLocationPermission()){
             // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                    .findFragmentById(R.id.map);
-            mapFragment.getMapAsync(this);
-
-        } else {
-            // TODO: add handler
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            if(mapFragment != null){
+                mapFragment.getMapAsync(this);
+            }
         }
 
-        // Initialise XML objects
+        // Initialise XML variables
         final Button markLocationButton = findViewById(R.id.markButton);
         final Button startLocationUpdatesButton = findViewById(R.id.startButton);
-        final Button pauseLocationUpdatesButton = findViewById(R.id.pauseButton);
         final Button saveRouteButton = findViewById(R.id.stopButton);
         distanceInMetersTextView = findViewById(R.id.Distance_Text);
+        stringStart = getResources().getString(R.string.start);
+        stringPause = getResources().getString(R.string.pause);
+        stringResume = getResources().getString(R.string.resume);
+        drawableStart = getResources().getDrawable(R.drawable.round_fiber_manual_record_24);
+        drawablePause = getResources().getDrawable(R.drawable.round_pause_24);
+        drawableResume = getResources().getDrawable(R.drawable.round_fiber_manual_record_24);
 
         mLocationCallback = new LocationCallback() {
             @Override
@@ -136,7 +156,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     onLocationChanged(locationResult.getLastLocation());
                     updateCameraLocation(locationResult.getLastLocation());
                 }
-            };
+            }
         };
 
         markLocationButton.setOnClickListener(new View.OnClickListener() {
@@ -146,39 +166,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        // Starts Tracking Route
         startLocationUpdatesButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                    Toast.makeText(getApplicationContext(), "Now tracking your route!", Toast.LENGTH_LONG).show();
-                    startLocationUpdates();
-                    paused = false;
-            }
-        });
 
-        // Pauses Route
-        pauseLocationUpdatesButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(!paused){
+                if(paused){
+                    // Pauses location updates
                     Toast.makeText(getApplicationContext(), "Route tracking is paused!", Toast.LENGTH_LONG).show();
                     stopLocationUpdates();
-                    pauseLocationUpdatesButton.setText("Resume Route");
-                    paused = true;
+                    startLocationUpdatesButton.setText(stringResume);
+                    startLocationUpdatesButton.setCompoundDrawablesRelativeWithIntrinsicBounds(drawableResume, null, null, null);
+                    paused = false;
                 } else {
+                    // Starts and Resumes location updates
                     Toast.makeText(getApplicationContext(), "Now tracking your route!", Toast.LENGTH_LONG).show();
                     startLocationUpdates();
-                    pauseLocationUpdatesButton.setText("Pause Route");
-                    paused = false;
+                    startLocationUpdatesButton.setText(stringPause);
+                    startLocationUpdatesButton.setCompoundDrawablesRelativeWithIntrinsicBounds(drawablePause, null,null, null);
+                    paused = true;
                 }
+
             }
         });
 
-
-        // TODO: create a window for users to edit and add information
         saveRouteButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
+
+                // TODO: BRING UP FRAGMENT TO HANDLE INFORMATION CHANGING AND SAVING
+
                 // Generates ID for current route
                 hikingRouteKey = hikingRef.push().getKey();
                 // Creates a router object
@@ -186,28 +202,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 // Saves object to the Firebase database
                 hikingRef.child(hikingRouteKey).setValue(hikingRouteSave);
 
-                /** Loop through all the POI images within list **/
+                // Loop through all the POI images within list
                 if(poiImageSave != null) {
                     for(int i=0; i < poiImageSave.size(); i++) {
                         if(poiImageSave.get(i) != null){
-//                            Toast.makeText(MapsActivity.this, poiImageSave.get(i).getPoiID(), Toast.LENGTH_SHORT).show();
-                            uploadImage(poiImageSave.get(i));
+                          uploadImage(poiImageSave.get(i));
                         }
 
                     }
                 }
 
-
-                paused = false;
                 stopLocationUpdates();
                 mMap.clear();
+                paused = false;
+                startLocationUpdatesButton.setText(stringStart);
+                startLocationUpdatesButton.setCompoundDrawablesRelativeWithIntrinsicBounds(drawableStart, null, null, null);
+
             }
         });
 
     }
 
 
-    /** Method used to upload images to Firebase **/
+    // Method used to upload images to FireBase
     private void uploadImage(POIImage poiI) {
         StorageReference imageRef = mStorage.child(poiI.getPoiID());
                 imageRef.putFile(poiI.getImageUri())
@@ -241,7 +258,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         getFusedLocationProviderClient(this).removeLocationUpdates(mLocationCallback);
     }
 
-    // TODO: fix pause problem where it adds the distance twice
+    // TODO: fix pause problem where distance is calculated weirdly
     public void calculateDistance(Location loc1, Location loc2){
         float distance = loc1.distanceTo(loc2);
         distanceInMetersFloat = distance + distanceInMetersFloat;
@@ -306,8 +323,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         mMap.addPolyline(new PolylineOptions()
             .add(temp1, temp2)
-            .width(5)
-            .color(Color.RED));
+            .width(10)
+            .color(Color.YELLOW));
 
         calculateDistance(previousLocation, currentLocation);
     }
@@ -341,12 +358,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            Log.d("MapsActivity", "Error trying to get last GPS location");
+                            Log.d(TAG, "Error trying to get last GPS location");
                             e.printStackTrace();
                         }
                     });
         } else {
             // TODO: add something to handle when a user hasn't approved permissions
+            Toast.makeText(this, "Permissions not granted!", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -361,11 +379,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     MarkerOptions markerOptions = extras.getParcelable("marker");
                     Marker marker = mMap.addMarker(markerOptions);
 
+                    // Gets the image URL from the EditMarker Activity
+                    String image_path = extras.getString("imageURI");
+
+                    marker.setTag(image_path);
+
                     LocationModel tempLoc = new LocationModel(marker.getPosition().latitude, marker.getPosition().longitude);
                     POIModel tempPOI = new POIModel(marker.getTitle(), marker.getSnippet(), tempLoc);
 
-                    // Gets the image URL from the EditMarker Activity
-                    String image_path = extras.getString("imageURI");
                     POIImage tempImage = new POIImage(Uri.parse("file://"+image_path), tempPOI.getPoiID());
 
                     poiImageSave.add(tempImage);
@@ -385,6 +406,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
 
+            try{
+                // Customise the styling of the base map using a JSON object defined
+                // in a raw resource file.
+                boolean success = googleMap.setMapStyle(
+                        MapStyleOptions.loadRawResourceStyle(
+                                this, R.raw.style_json));
+
+                if (!success) {
+                    Log.e(TAG, "Style parsing failed.");
+                }
+            } catch (Resources.NotFoundException e) {
+                Log.e(TAG, "Can't find style. Error: ", e);
+            }
+
             // Move Camera
             manager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
             mCriteria = new Criteria();
@@ -402,7 +437,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     if(!pressed){
                         pressed = true;
                     }
-
                     if (pressed) {
                         marker.hideInfoWindow();
                         pressed = false;
