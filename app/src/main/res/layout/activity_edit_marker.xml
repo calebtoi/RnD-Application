@@ -2,21 +2,41 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:gravity="center">
 
-    <EditText
-        android:id="@+id/title"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="280dp"
         android:layout_height="wrap_content"
-        android:hint="Title"/>
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <EditText
+            android:id="@+id/titleMarker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Title"/>
+
+        <EditText
+            android:id="@+id/snippetMarker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description"/>
+
+        <ImageView
+            android:id="@+id/imagePOI"
+            android:layout_width="100dp"
+            android:layout_height="100dp" />
+
+    </LinearLayout>
 
     <Button
-        android:id="@+id/btnCamera"
-        android:layout_width="180dp"
-        android:layout_height="50dp"
-        android:background="@android:color/holo_red_dark"
-        android:text="Take Photo"
-        android:textColor="@android:color/white" />
+        android:id="@+id/buttonCamera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CAMERA"/>
+
+
 
     <Button
         android:id="@+id/save"

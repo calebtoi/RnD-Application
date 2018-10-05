@@ -12,7 +12,6 @@ import android.widget.Button;
 ;
 import com.google.firebase.auth.FirebaseAuth;
 
-import development.calebtoi.test.MainActivity;
 import development.calebtoi.test.MapsActivity;
 import development.calebtoi.test.R;
 
@@ -31,7 +30,7 @@ public class MenuFragment extends Fragment{
         view = inflater.inflate(R.layout.fragment_menu, container, false);
 
         logoutButton = view.findViewById(R.id.buttonLogout);
-        mapsButton = view.findViewById(R.id.buttonMaps);
+        mapsButton = view.findViewById(R.id.buttonNewRoute);
 
         logoutButton.setOnClickListener(new View.OnClickListener(){
             @Override

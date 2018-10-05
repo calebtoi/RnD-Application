@@ -36,11 +36,12 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
     @Override
     public void OnLoginDataPass(String email, String password){
 
-        if(email != null || password != null){
-            loginEmail = email;
-            loginPassword = password;
+        loginEmail = email;
+        loginPassword = password;
 
-            mAuth.signInWithEmailAndPassword(email, password)
+        if(loginEmail != null || loginPassword != null){
+
+            mAuth.signInWithEmailAndPassword(loginEmail, loginPassword)
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
@@ -48,15 +49,6 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                                 // Sign in success
                                 Log.d(TAG, "signInWithEmail:success");
                                 FirebaseUser user = mAuth.getCurrentUser();
-
-//                                Fragment frag = new MenuFragment();
-//                                FragmentManager manager = getSupportFragmentManager();
-//                                manager.beginTransaction()
-//                                        .replace(R.id.content_test, frag)
-//                                        .commit();
-
-                                Intent mapIntent = new Intent(MainActivity.this, MapsActivity.class);
-                                startActivity(mapIntent);
 
                                 Toast.makeText(MainActivity.this, "Logged in!",
                                         Toast.LENGTH_SHORT).show();
@@ -82,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
         signupPassword = password;
 
 
-        if(signupUsername != null || signupEmail != null || signupPassword != null){
+        if(signupUsername != null && signupEmail != null && signupPassword != null){
             mAuth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                         @Override
@@ -91,17 +83,6 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                                 // Sign in success, update UI with the signed-in user's information
                                 Log.d(TAG, "createUserWithEmail:success");
                                 FirebaseUser user = mAuth.getCurrentUser();
-
-                                // Change to Map Fragment - possibly move back to Activity
-//                                Fragment frag = new MenuFragment();
-//                                FragmentManager manager = getSupportFragmentManager();
-//                                manager.beginTransaction()
-//                                        .replace(R.id.content_test, frag)
-//                                        .commit();
-
-                                Intent mapIntent = new Intent(MainActivity.this, MapsActivity.class);
-                                startActivity(mapIntent);
-
                             } else {
                                 // If sign in fails, display a message to the user.
                                 Log.w(TAG, "createUserWithEmail:failure", task.getException());

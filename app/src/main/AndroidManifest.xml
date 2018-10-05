@@ -43,18 +43,19 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
-        <activity android:name=".MapsActivity" />
-        <activity android:name=".EditMarker"
-            android:label="Edit_Marker"></activity>
+        <activity android:name=".MapsActivity"/>
+        <activity
+            android:name=".EditMarker"
+            android:label="Edit_Marker"/>
 
         <provider
-            android:name="android.support.v4.content.FileProvider"
-            android:authorities="com.example.android.fileprovider"
+            android:name=".GenericFileProvider"
+            android:authorities="development.calebtoi.test.provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
+                android:resource="@xml/provider_paths"/>
         </provider>
 
     </application>
