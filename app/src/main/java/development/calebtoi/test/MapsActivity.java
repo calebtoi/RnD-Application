@@ -24,6 +24,8 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -87,9 +89,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean pressed = false;
 
     // XML Variables
-    private String stringStart;
-    private String stringPause;
-    private String stringResume;
+    private String stringPaused;
+    private String stringTracking;
+    private TextView trackingStatusText;
+    private LinearLayout trackingStatusContainer;
     private Drawable drawableStart;
     private Drawable drawablePause;
     private Drawable drawableResume;
@@ -102,8 +105,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private String hikingRouteKey = "hikingKey";
     private String userID = "user";
 
-    private long UPDATE_INTERVAL = 100000;
-    private long FASTEST_INTERVAL = 100000;
+    private long UPDATE_INTERVAL = 10000;
+    private long FASTEST_INTERVAL = 10000;
 
     private static final int EDIT_REQUEST = 1;
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
@@ -138,13 +141,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         // Initialise XML variables
-        final Button markLocationButton = findViewById(R.id.markButton);
-        final Button startLocationUpdatesButton = findViewById(R.id.startButton);
-        final Button saveRouteButton = findViewById(R.id.stopButton);
+        final ImageButton markLocationButton = findViewById(R.id.markButton);
+        final ImageButton startLocationUpdatesButton = findViewById(R.id.startButton);
+        final ImageButton saveRouteButton = findViewById(R.id.stopButton);
         distanceInMetersTextView = findViewById(R.id.Distance_Text);
-        stringStart = getResources().getString(R.string.start);
-        stringPause = getResources().getString(R.string.pause);
-        stringResume = getResources().getString(R.string.resume);
+        stringPaused = getResources().getString(R.string.paused);
+        stringTracking = getResources().getString(R.string.tracking);
+        trackingStatusText = findViewById(R.id.trackingStatusText);
+        trackingStatusContainer = findViewById(R.id.trackingStatusCont);
         drawableStart = getResources().getDrawable(R.drawable.round_fiber_manual_record_24);
         drawablePause = getResources().getDrawable(R.drawable.round_pause_24);
         drawableResume = getResources().getDrawable(R.drawable.round_fiber_manual_record_24);
@@ -174,15 +178,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     // Pauses location updates
                     Toast.makeText(getApplicationContext(), "Route tracking is paused!", Toast.LENGTH_LONG).show();
                     stopLocationUpdates();
-                    startLocationUpdatesButton.setText(stringResume);
-                    startLocationUpdatesButton.setCompoundDrawablesRelativeWithIntrinsicBounds(drawableResume, null, null, null);
+                    startLocationUpdatesButton.setImageDrawable(drawableResume);
+                    trackingStatusText.setText(stringPaused);
+                    trackingStatusContainer.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
                     paused = false;
                 } else {
                     // Starts and Resumes location updates
                     Toast.makeText(getApplicationContext(), "Now tracking your route!", Toast.LENGTH_LONG).show();
                     startLocationUpdates();
-                    startLocationUpdatesButton.setText(stringPause);
-                    startLocationUpdatesButton.setCompoundDrawablesRelativeWithIntrinsicBounds(drawablePause, null,null, null);
+                    startLocationUpdatesButton.setImageDrawable(drawablePause);
+                    trackingStatusText.setText(stringTracking);
+                    trackingStatusContainer.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
                     paused = true;
                 }
 
@@ -193,31 +199,108 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick(View v) {
 
-                // TODO: BRING UP FRAGMENT TO HANDLE INFORMATION CHANGING AND SAVING
+                AlertDialog.Builder endDialog = new AlertDialog.Builder(MapsActivity.this);
+                endDialog.setTitle("End Route");
+                endDialog.setMessage("Are you sure you want to end your route?");
 
-                // Generates ID for current route
-                hikingRouteKey = hikingRef.push().getKey();
-                // Creates a router object
-                hikingRouteSave = new HikingRoute("test", userID, routeSave, poiSave);
-                // Saves object to the Firebase database
-                hikingRef.child(hikingRouteKey).setValue(hikingRouteSave);
+                endDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    // On Yes click
+                    public void onClick(final DialogInterface dialog, int which) {
+                        dialog.dismiss();
 
-                // Loop through all the POI images within list
-                if(poiImageSave != null) {
-                    for(int i=0; i < poiImageSave.size(); i++) {
-                        if(poiImageSave.get(i) != null){
-                          uploadImage(poiImageSave.get(i));
-                        }
+                        // Dialog Box that prompts users to choose what the want to do with the current route
+                        AlertDialog.Builder saveDialog = new AlertDialog.Builder(MapsActivity.this);
+                        saveDialog.setTitle("Route Options");
+                        saveDialog.setMessage("What do you want to do with your current Route?");
+                        saveDialog.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                            // On Save click
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
 
+                                // Saves Route
+                                Toast.makeText(MapsActivity.this,"Saving Route...", Toast.LENGTH_LONG).show();
+                                // TODO: Add menu for so that users can add more information about the Route
+                                // Generates ID for current route
+                                hikingRouteKey = hikingRef.push().getKey();
+                                // Creates a router object
+                                hikingRouteSave = new HikingRoute("test", userID, routeSave, poiSave);
+                                // Saves object to the Firebase database
+                                hikingRef.child(hikingRouteKey).setValue(hikingRouteSave);
+
+                                // Loop through all the POI images within list
+                                if(poiImageSave != null) {
+                                    for(int i=0; i < poiImageSave.size(); i++) {
+                                        if(poiImageSave.get(i) != null){
+                                            uploadImage(poiImageSave.get(i));
+                                        }
+
+                                    }
+                                }
+
+                                // Resets for next Route
+                                stopLocationUpdates();
+                                mMap.clear();
+                                poiImageSave.clear();
+                                poiSave.clear();
+                                currentRoute.clear();
+                                routeSave.clear();
+                                paused = false;
+                                startLocationUpdatesButton.setImageDrawable(drawableStart);
+                                trackingStatusText.setText(null);
+                                trackingStatusContainer.setBackground(null);
+                            }
+                        });
+
+                        // On No click
+                        saveDialog.setNegativeButton("Clear", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+
+                                // Resets for next Route
+                                stopLocationUpdates();
+                                mMap.clear();
+                                poiImageSave.clear();
+                                poiSave.clear();
+                                currentRoute.clear();
+                                routeSave.clear();
+                                paused = false;
+                                startLocationUpdatesButton.setImageDrawable(drawableStart);
+                                trackingStatusText.setText(null);
+                                trackingStatusContainer.setBackground(null);
+                            }
+                        });
+
+                        saveDialog.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                             @Override
+                             public void onClick(DialogInterface dialog, int i) {
+                                 // Returns User back to their previous route
+                                 dialog.dismiss();
+                             }
+                        });
+
+                        AlertDialog alert = saveDialog.create();
+                        alert.show();
+                        alert.getButton(DialogInterface.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.common_google_signin_btn_text_light));
+                        alert.getButton(DialogInterface.BUTTON_NEGATIVE).setTextColor(getResources().getColor(R.color.common_google_signin_btn_text_light));
+                        alert.getButton(DialogInterface.BUTTON_NEUTRAL).setTextColor(getResources().getColor(R.color.common_google_signin_btn_text_light));
                     }
-                }
+                });
 
-                stopLocationUpdates();
-                mMap.clear();
-                paused = false;
-                startLocationUpdatesButton.setText(stringStart);
-                startLocationUpdatesButton.setCompoundDrawablesRelativeWithIntrinsicBounds(drawableStart, null, null, null);
+                // On No click
+                endDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Cancels Dialog
+                        dialog.dismiss();
+                    }
+                });
 
+                AlertDialog alert = endDialog.create();
+                alert.show();
+                alert.getButton(DialogInterface.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.common_google_signin_btn_text_light));
+                alert.getButton(DialogInterface.BUTTON_NEGATIVE).setTextColor(getResources().getColor(R.color.common_google_signin_btn_text_light));
+                alert.getButton(DialogInterface.BUTTON_NEUTRAL).setTextColor(getResources().getColor(R.color.common_google_signin_btn_text_light));
             }
         });
 
@@ -258,11 +341,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         getFusedLocationProviderClient(this).removeLocationUpdates(mLocationCallback);
     }
 
-    // TODO: fix pause problem where distance is calculated weirdly
     public void calculateDistance(Location loc1, Location loc2){
         float distance = loc1.distanceTo(loc2);
         distanceInMetersFloat = distance + distanceInMetersFloat;
-        distanceInMetersTextView.setText(Float.toString(distanceInMetersFloat));
+        String distanceString = String.format("%.2f",distanceInMetersFloat);
+        distanceInMetersTextView.setText(distanceString);
     }
 
     //Trigger new location updates at interval
@@ -401,6 +484,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.setPadding(0,40,10,0);
 
         // Has to be wrapped in a permission checker
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
