@@ -4,6 +4,8 @@ import java.util.List;
 
 public class HikingRoute {
     private String name;
+    private String description;
+    private float difficulty;
     public String userID;
     public List<LocationModel> route;
     public List<POIModel> poi;
@@ -12,11 +14,23 @@ public class HikingRoute {
     public HikingRoute() {
     }
 
-    public HikingRoute(String name, String uID, List<LocationModel> route, List<POIModel> poi){
+    // With POI
+    public HikingRoute(String name, String description, float difficulty, String uID, List<LocationModel> route, List<POIModel> poi){
         this.name = name;
+        this.description = description;
+        this.difficulty = difficulty;
         this.userID = uID;
         this.route = route;
         this.poi = poi;
+    }
+
+    // Without POI
+    public HikingRoute(String name, String description, float difficulty, String uID, List<LocationModel> route){
+        this.name = name;
+        this.description = description;
+        this.difficulty = difficulty;
+        this.userID = uID;
+        this.route = route;
     }
 
     /** GETTERS **/

@@ -1,5 +1,7 @@
 package development.calebtoi.test.datamodels;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.UUID;
 
 public class POIModel {
@@ -32,7 +34,10 @@ public class POIModel {
     public String getPoiID() {
         return poiID;
     }
-    public LocationModel getLocation() {
-        return location;
+    public LatLng getLocation() {
+
+        LatLng temp = new LatLng(location.getLat(), location.getLng());
+
+        return temp;
     }
 }

@@ -8,16 +8,21 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
+import android.media.Image;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -25,10 +30,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.request.FutureTarget;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -49,8 +58,12 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
@@ -58,6 +71,8 @@ import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 import development.calebtoi.test.datamodels.HikingRoute;
 import development.calebtoi.test.datamodels.LocationModel;
@@ -109,7 +124,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private long FASTEST_INTERVAL = 10000;
 
     private static final int EDIT_REQUEST = 1;
+    private static final int ROUTE_INFO_REQUEST = 12345;
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+    public static final int MY_PERMISSIONS_REQUEST_INTERNET = 999;
 
     private TextView distanceInMetersTextView;
     private float distanceInMetersFloat = 0.0f;
@@ -130,7 +147,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mStorage = FirebaseStorage.getInstance().getReference().child("POI_Images");
 
         // Retrieves User ID from FireBase
-        userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseUser mUser = FirebaseAuth.getInstance().getCurrentUser();
+        if(mUser != null) {
+            userID = mUser.getUid();
+        }
 
         if(checkLocationPermission()){
             // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -138,6 +158,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if(mapFragment != null){
                 mapFragment.getMapAsync(this);
             }
+        }
+
+        if(checkInternetPermission()){
+            Toast.makeText(MapsActivity.this, "Internet Permissions granted", Toast.LENGTH_LONG).show();
         }
 
         // Initialise XML variables
@@ -217,34 +241,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
 
-                                // Saves Route
-                                Toast.makeText(MapsActivity.this,"Saving Route...", Toast.LENGTH_LONG).show();
-                                // TODO: Add menu for so that users can add more information about the Route
-                                // Generates ID for current route
-                                hikingRouteKey = hikingRef.push().getKey();
-                                // Creates a router object
-                                hikingRouteSave = new HikingRoute("test", userID, routeSave, poiSave);
-                                // Saves object to the Firebase database
-                                hikingRef.child(hikingRouteKey).setValue(hikingRouteSave);
+                                Intent intent;
+                                intent = new Intent(MapsActivity.this, RouteInfoActivity.class);
+                                MapsActivity.this.startActivityForResult(intent, ROUTE_INFO_REQUEST);
 
-                                // Loop through all the POI images within list
-                                if(poiImageSave != null) {
-                                    for(int i=0; i < poiImageSave.size(); i++) {
-                                        if(poiImageSave.get(i) != null){
-                                            uploadImage(poiImageSave.get(i));
-                                        }
-
-                                    }
-                                }
-
-                                // Resets for next Route
-                                stopLocationUpdates();
-                                mMap.clear();
-                                poiImageSave.clear();
-                                poiSave.clear();
-                                currentRoute.clear();
-                                routeSave.clear();
-                                paused = false;
                                 startLocationUpdatesButton.setImageDrawable(drawableStart);
                                 trackingStatusText.setText(null);
                                 trackingStatusContainer.setBackground(null);
@@ -304,6 +304,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        createRoute();
+
     }
 
 
@@ -344,7 +346,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void calculateDistance(Location loc1, Location loc2){
         float distance = loc1.distanceTo(loc2);
         distanceInMetersFloat = distance + distanceInMetersFloat;
-        String distanceString = String.format("%.2f",distanceInMetersFloat);
+        String distanceString = String.format(Locale.ENGLISH, "%.2f",distanceInMetersFloat);
         distanceInMetersTextView.setText(distanceString);
     }
 
@@ -371,9 +373,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             //new Google API SDK v11 uses getFusedLocationProviderClient(this)
             getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-        }else{
-            // TODO: add something to handle when a user hasn't approved permissions
         }
+        // TODO: add something to handle when a user hasn't approved permissions
     }
 
     public void onLocationChanged(Location location) {
@@ -385,7 +386,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         currentRoute.add(location);
 
-        /** Location model to save route **/
+        // Location model to save route
         LocationModel tempLocationModel = new LocationModel(location.getLatitude(), location.getLongitude());
         routeSave.add(tempLocationModel);
 
@@ -397,7 +398,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void drawRoute(){
-        //create polylines between gps locations
+        //create PolyLines between gps locations
         Location previousLocation = currentRoute.get(currentRoute.size() - 2);
         Location currentLocation = currentRoute.get(currentRoute.size() - 1);
 
@@ -413,7 +414,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void markLocation() {
-        //Get last known recent location using new Google Play Sevices SDK (v11+)
+        //Get last known recent location using new Google Play Services SDK (v11+)
         FusedLocationProviderClient locationClient = getFusedLocationProviderClient(this);
 
         // Has to wrapped in a permission checker
@@ -427,7 +428,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 updateCameraLocation(location);
                                 LatLng poi = new LatLng(location.getLatitude(), location.getLongitude());
                                 LocationModel tempLoc = new LocationModel(location.getLatitude(), location.getLongitude());
-
 
                                 routeSave.add(tempLoc);
                                 currentRoute.add(location);
@@ -457,28 +457,162 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         switch(requestCode) {
             case (EDIT_REQUEST) : {
                 if (resultCode == Activity.RESULT_OK) {
+
                     Bundle extras = data.getExtras();
-                    // Creates and adds marker to the map
-                    MarkerOptions markerOptions = extras.getParcelable("marker");
-                    Marker marker = mMap.addMarker(markerOptions);
 
-                    // Gets the image URL from the EditMarker Activity
-                    String image_path = extras.getString("imageURI");
+                    if(extras != null) {
+                        // Creates and adds marker to the map
+                        MarkerOptions markerOptions = extras.getParcelable("marker");
+                        Marker marker = mMap.addMarker(markerOptions);
 
-                    marker.setTag(image_path);
+                        // Gets the image URL from the EditMarker Activity
+                        String image_path = extras.getString("imageURI");
 
-                    LocationModel tempLoc = new LocationModel(marker.getPosition().latitude, marker.getPosition().longitude);
-                    POIModel tempPOI = new POIModel(marker.getTitle(), marker.getSnippet(), tempLoc);
+                        marker.setTag("file://" +image_path);
 
-                    POIImage tempImage = new POIImage(Uri.parse("file://"+image_path), tempPOI.getPoiID());
+                        LocationModel tempLoc = new LocationModel(marker.getPosition().latitude, marker.getPosition().longitude);
+                        POIModel tempPOI = new POIModel(marker.getTitle(), marker.getSnippet(), tempLoc);
 
-                    poiImageSave.add(tempImage);
-                    poiSave.add(tempPOI);
+                        POIImage tempImage = new POIImage(Uri.parse("file://"+image_path), tempPOI.getPoiID());
 
+                        poiImageSave.add(tempImage);
+                        poiSave.add(tempPOI);
+                    }
                 }
                 break;
             }
+            case (ROUTE_INFO_REQUEST) : {
+                if(resultCode == Activity.RESULT_OK){
+                    Bundle extras = data.getExtras();
+
+                    String routeName;
+                    String routeDesc;
+                    float difficulty;
+
+                    if(extras != null) {
+                        routeName = extras.getString("name");
+                        routeDesc = extras.getString("description");
+                        difficulty = extras.getFloat("difficulty");
+
+                        // Generates ID for current route
+                        hikingRouteKey = hikingRef.push().getKey();
+                        // Creates a router object
+                        if(poiSave != null) {
+                            // Creates object with POI
+                            hikingRouteSave = new HikingRoute(routeName, routeDesc, difficulty, userID, routeSave, poiSave);
+                        } else {
+                            // Creates object without POI
+                            hikingRouteSave = new HikingRoute(routeName, routeDesc, difficulty, userID, routeSave);
+                        }
+                        // Saves object to the FireBase database
+                        hikingRef.child(hikingRouteKey).setValue(hikingRouteSave);
+
+                        // Loop through all the POI images within list
+                        if(poiImageSave != null) {
+                            for(int i=0; i < poiImageSave.size(); i++) {
+                                if(poiImageSave.get(i) != null){
+                                    uploadImage(poiImageSave.get(i));
+                                }
+                            }
+                        }
+                    }
+                    // TODO: add else error handler
+
+
+                    stopLocationUpdates();
+                    mMap.clear();
+                    poiImageSave.clear();
+                    poiSave.clear();
+                    currentRoute.clear();
+                    routeSave.clear();
+                    paused = false;
+
+
+                }
+            }
         }
+    }
+
+
+    // WIP
+    public void createRoute() {
+
+        String hikingRouteID = "-LOGHwFLQi4fAVD-dt07";
+
+        // Child will parse the HikingRoutes uID
+        hikingRef.child(hikingRouteID).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                // Get Hiking Route
+                HikingRoute tempHR = dataSnapshot.getValue(HikingRoute.class);
+                List<LocationModel> tempLocation = tempHR.getRoute();
+                List<POIModel> tempPOI = tempHR.getPoi();
+
+                // Draws Route out for the user
+                for(int i = 0; i < tempLocation.size(); i++){
+
+                    LatLng tempLatLng1;
+                    LatLng tempLatLng2;
+                    if(i == 0){
+                        // First Location of the Route
+                        tempLatLng1 = new LatLng(tempLocation.get(0).getLat(), tempLocation.get(0).getLng());
+                    } else {
+                        // Previous Location of the Route
+                        tempLatLng1 = new LatLng(tempLocation.get(i-1).getLat(), tempLocation.get(i-1).getLng());
+                    }
+                    // Current Location of the Route
+                    tempLatLng2 = new LatLng(tempLocation.get(i).getLat(), tempLocation.get(i).getLng());
+
+                    mMap.addPolyline(new PolylineOptions()
+                            .add(tempLatLng1, tempLatLng2)
+                            .width(10)
+                            .color(Color.YELLOW));
+
+                }
+
+                // Get POI List
+                // Loop through list to get marker objects
+                // Add to map
+                for(int i = 0; i < tempPOI.size(); i++) {
+
+                    LatLng poiLatLng = tempPOI.get(i).getLocation();
+
+                    final MarkerOptions markerOptions = new MarkerOptions().position(poiLatLng);
+                    markerOptions.title(tempPOI.get(i).getTitle());
+                    markerOptions.snippet(tempPOI.get(i).getDescription());
+
+                    final Marker marker = mMap.addMarker(markerOptions);
+                    marker.hideInfoWindow();
+
+                    StorageReference imageRef = FirebaseStorage.getInstance().getReference("POI_Images/"+tempPOI.get(i).getPoiID());
+                    imageRef.getBytes(Long.MAX_VALUE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                        @Override
+                        public void onSuccess(byte[] bytes) {
+                            Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                            marker.setTag(bmp);
+                        }
+                    });
+
+//                    imageRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+//                        @Override
+//                        public void onSuccess(Uri uri) {
+//                            Toast.makeText(MapsActivity.this, uri.toString(), Toast.LENGTH_LONG).show();
+//                        }
+//                    });
+
+                }
+
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+
+
     }
 
     @Override
@@ -514,14 +648,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             CustomInfoWindowGoogleMap customInfoWindow = new CustomInfoWindowGoogleMap(this);
             mMap.setInfoWindowAdapter(customInfoWindow);
 
-            // Shows an hides infowindow when pressed
+            // Shows an hides InfoWindow when pressed
             mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
                 @Override
                 public void onInfoWindowClick(Marker marker) {
                     if(!pressed){
                         pressed = true;
-                    }
-                    if (pressed) {
+                    } else {
                         marker.hideInfoWindow();
                         pressed = false;
                     }
@@ -549,13 +682,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             if(mLocation != null){
                 updateCameraLocation(mLocation);
-            } else {
-                // TODO: handle error
             }
-
-        } else {
-            // TODO: add something to handle when a user hasn't approved permissions
+            // TODO: handle null error
         }
+        // TODO: add something to handle when a user hasn't approved permissions
     }
 
     // ACCESS_FINE_LOCATION apparently allows access to coarse location as well
@@ -591,6 +721,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             return true;
         }
+
+    }
+
+    public boolean checkInternetPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.INTERNET)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Opens up a dialog that notifys the user about the permissions the app needs
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.INTERNET)) {
+                // TODO: improve
+                new AlertDialog.Builder(this)
+                        .setTitle("TITLE")
+                        .setMessage("EXPLANATION")
+                        .setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Prompt the user once explanation has been shown
+                                ActivityCompat.requestPermissions(MapsActivity.this,
+                                        new String[]{Manifest.permission.INTERNET},
+                                        MY_PERMISSIONS_REQUEST_INTERNET);
+                            }
+                        })
+                        .create()
+                        .show();
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.INTERNET},
+                        MY_PERMISSIONS_REQUEST_INTERNET);
+            }
+            return false;
+        } else {
+            return true;
+        }
+
     }
 
     // Updates camera to follow location on the map

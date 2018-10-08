@@ -193,7 +193,7 @@ public class EditMarker extends Activity {
     private File createImageFile() throws IOException {
         /* Create an image file name */
 
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
         imageFileName = "JPEG_" + timeStamp + "_";
 
         //Album
