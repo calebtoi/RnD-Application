@@ -16,28 +16,21 @@ import android.graphics.drawable.Drawable;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
-import android.media.Image;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.request.FutureTarget;
-import com.bumptech.glide.request.target.SimpleTarget;
-import com.bumptech.glide.request.transition.Transition;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -69,10 +62,10 @@ import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ExecutionException;
 
 import development.calebtoi.test.datamodels.HikingRoute;
 import development.calebtoi.test.datamodels.LocationModel;
@@ -81,7 +74,8 @@ import development.calebtoi.test.datamodels.POIModel;
 
 import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
-// TODO: Link to firebase database and authentication, design a way to save walks
+// TODO: Link to FireBase database and authentication
+// TODO: Design a way to save walks
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback{
 
@@ -304,8 +298,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        createRoute();
-
     }
 
 
@@ -467,8 +459,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         // Gets the image URL from the EditMarker Activity
                         String image_path = extras.getString("imageURI");
+                        Uri imgUri = Uri.parse("file://"+image_path);
+                        try {
+                            Bitmap imgBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imgUri);
+                            marker.setTag(imgBitmap);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
 
-                        marker.setTag("file://" +image_path);
+//                        marker.setTag("file://" +image_path);
 
                         LocationModel tempLoc = new LocationModel(marker.getPosition().latitude, marker.getPosition().longitude);
                         POIModel tempPOI = new POIModel(marker.getTitle(), marker.getSnippet(), tempLoc);
@@ -592,17 +591,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             marker.setTag(bmp);
                         }
                     });
-
-//                    imageRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-//                        @Override
-//                        public void onSuccess(Uri uri) {
-//                            Toast.makeText(MapsActivity.this, uri.toString(), Toast.LENGTH_LONG).show();
-//                        }
-//                    });
-
                 }
-
-
             }
 
             @Override

@@ -62,9 +62,6 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
 
                     });
         }
-
-
-
     }
 
     @Override
@@ -72,7 +69,6 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
         signupUsername = username;
         signupEmail = email;
         signupPassword = password;
-
 
         if(signupUsername != null && signupEmail != null && signupPassword != null){
             mAuth.createUserWithEmailAndPassword(email, password)

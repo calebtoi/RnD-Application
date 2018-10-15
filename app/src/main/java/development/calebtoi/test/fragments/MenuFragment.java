@@ -13,15 +13,12 @@ import android.widget.Button;
 import com.google.firebase.auth.FirebaseAuth;
 
 import development.calebtoi.test.MapsActivity;
+import development.calebtoi.test.MyRoutesActivity;
 import development.calebtoi.test.R;
 
 public class MenuFragment extends Fragment{
 
     private View view;
-
-    private Button logoutButton;
-    private Button mapsButton;
-
 
     @Nullable
     @Override
@@ -29,9 +26,11 @@ public class MenuFragment extends Fragment{
 
         view = inflater.inflate(R.layout.fragment_menu, container, false);
 
-        logoutButton = view.findViewById(R.id.buttonLogout);
-        mapsButton = view.findViewById(R.id.buttonNewRoute);
+        Button logoutButton = view.findViewById(R.id.buttonLogout);
+        Button mapsButton = view.findViewById(R.id.buttonNewRoute);
+        Button myRouteButton = view.findViewById(R.id.buttonMyRoutes);
 
+        // Logs user out
         logoutButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
@@ -39,11 +38,23 @@ public class MenuFragment extends Fragment{
             }
         });
 
+        // Opens map tracking functionality
         mapsButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
                 Intent intent;
                 intent = new Intent(view.getContext(), MapsActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+            }
+        });
+
+        // Opens view of all the users saved Routes
+        myRouteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent;
+                intent = new Intent(view.getContext(), MyRoutesActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
             }

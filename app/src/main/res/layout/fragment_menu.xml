@@ -30,18 +30,29 @@
                 android:minHeight="40dp"
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="5dp"
-                android:text="Start New Route"
+                android:text="New Route"
                 android:textColor="@android:color/white"
                 android:background="@drawable/rounded_button" />
 
             <Button
-                android:id="@+id/btnSavedRoutes"
+                android:id="@+id/buttonMyRoutes"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="40dp"
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="5dp"
-                android:text="Your Saved Routes"
+                android:text="My Routes"
+                android:textColor="@android:color/white"
+                android:background="@drawable/rounded_button" />
+
+            <Button
+                android:id="@+id/btnAllRoutes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="40dp"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:text="All Routes"
                 android:textColor="@android:color/white"
                 android:background="@drawable/rounded_button" />
 
@@ -52,7 +63,7 @@
                 android:minHeight="40dp"
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="5dp"
-                android:text="Go to Website"
+                android:text="Website"
                 android:textColor="@android:color/white"
                 android:background="@drawable/rounded_button" />
 
@@ -67,9 +78,10 @@
             android:layout_marginBottom="5dp">
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.5">
+
                 <Button
                     android:id="@+id/btnProfile"
                     android:layout_width="wrap_content"
@@ -95,8 +107,6 @@
                     android:text="Logout" />
 
             </LinearLayout>
-
-
         </LinearLayout>
     </LinearLayout>
 

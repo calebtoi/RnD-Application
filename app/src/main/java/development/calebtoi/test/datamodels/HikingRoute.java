@@ -43,6 +43,9 @@ public class HikingRoute {
     public List<POIModel> getPoi() {
         return poi;
     }
+    public String getDescription() {
+        return description;
+    }
 
     /** SETTERS **/
     public void setName(String name) {

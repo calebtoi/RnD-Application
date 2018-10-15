@@ -105,9 +105,6 @@ public class EditMarker extends Activity {
                     }
                 }
 
-                MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "title" , "description");
-
-                Intent resultIntent = new Intent();
 
                 extras.putParcelable("marker", marker);
                 if(photoFile != null) {
@@ -115,6 +112,7 @@ public class EditMarker extends Activity {
                     extras.putString("imageURI", imageURI);
                 }
 
+                Intent resultIntent = new Intent();
                 resultIntent.putExtras(extras);
                 setResult(Activity.RESULT_OK, resultIntent);
                 finish();
