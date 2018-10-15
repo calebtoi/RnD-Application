@@ -42,3 +42,4 @@ captures/
 /captures
 .externalNativeBuild
 .idea/vcs.xml
+\.idea/
