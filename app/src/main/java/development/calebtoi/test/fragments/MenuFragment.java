@@ -1,6 +1,7 @@
 package development.calebtoi.test.fragments;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -31,6 +32,7 @@ public class MenuFragment extends Fragment{
         Button mapsButton = view.findViewById(R.id.buttonNewRoute);
         Button myJourneysButton = view.findViewById(R.id.button_my_journeys);
         Button allJourneysButton = view.findViewById(R.id.button_all_journeys);
+        Button websiteButton = view.findViewById(R.id.button_website);
 
         // Logs user out
         logoutButton.setOnClickListener(new View.OnClickListener(){
@@ -68,6 +70,15 @@ public class MenuFragment extends Fragment{
                 Intent intent;
                 intent = new Intent(view.getContext(), AllJourneysActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+            }
+        });
+
+        websiteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri uriUrl = Uri.parse("https://gottogetout.com/");
+                Intent intent = new Intent(Intent.ACTION_VIEW, uriUrl);
                 startActivity(intent);
             }
         });
