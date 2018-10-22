@@ -30,29 +30,29 @@
                 android:minHeight="40dp"
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="5dp"
-                android:text="New Route"
+                android:text="New Journey"
                 android:textColor="@android:color/white"
                 android:background="@drawable/rounded_button" />
 
             <Button
-                android:id="@+id/buttonMyRoutes"
+                android:id="@+id/button_my_journeys"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="40dp"
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="5dp"
-                android:text="My Routes"
+                android:text="My Journeys"
                 android:textColor="@android:color/white"
                 android:background="@drawable/rounded_button" />
 
             <Button
-                android:id="@+id/btnAllRoutes"
+                android:id="@+id/button_all_journeys"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="40dp"
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="5dp"
-                android:text="All Routes"
+                android:text="All Journeys"
                 android:textColor="@android:color/white"
                 android:background="@drawable/rounded_button" />
 
@@ -76,22 +76,6 @@
 
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.5">
-
-                <Button
-                    android:id="@+id/btnProfile"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minHeight="40dp"
-                    android:background="@drawable/rounded_button_dark"
-                    android:textColor="@android:color/white"
-                    android:text="Profile" />
-
-            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="wrap_content"

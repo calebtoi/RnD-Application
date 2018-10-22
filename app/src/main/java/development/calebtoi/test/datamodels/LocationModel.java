@@ -1,5 +1,7 @@
 package development.calebtoi.test.datamodels;
 
+import android.util.Log;
+
 public class LocationModel {
 
     private double lat, lng;
@@ -14,9 +16,11 @@ public class LocationModel {
 
     /** GETTERS **/
     public double getLat() {
+        Log.i("LocationModel", "Getting LAT: " + lat );
         return lat;
     }
     public double getLng() {
+        Log.i("LocationModel", "Getting LNG: " + lng );
         return lng;
     }
 

@@ -25,7 +25,7 @@ import development.calebtoi.test.adapters.JourneyRecyclerAdapter;
 import development.calebtoi.test.clicklisteners.RecyclerClickListener;
 import development.calebtoi.test.datamodels.HikingRoute;
 
-public class MyJourneyActivity extends AppCompatActivity implements RecyclerClickListener.OnRecyclerClickListener {
+public class MyJourneysActivity extends AppCompatActivity implements RecyclerClickListener.OnRecyclerClickListener {
 
     private static final String TAG = "MyRouteActivity";
 
@@ -96,7 +96,7 @@ public class MyJourneyActivity extends AppCompatActivity implements RecyclerClic
 
         String routeID = mRoutes.get(position).getRouteID();
 
-        Intent intent = new Intent(MyJourneyActivity.this, MapsActivity.class);
+        Intent intent = new Intent(MyJourneysActivity.this, MapsActivity.class);
         intent.putExtra("routeID", routeID);
         setResult(Activity.RESULT_OK);
         startActivity(intent);
@@ -127,13 +127,8 @@ public class MyJourneyActivity extends AppCompatActivity implements RecyclerClic
                             Log.i(TAG, "UserID: " + userID);
                             Log.i(TAG, "Route UserID " + route.getUserID());
 
-                            if(route.getUserID().equals(userID)){
-                                mRoutes.add(route);
-                                Log.i(TAG, "Adding route title: " + route.getName());
-                            }
-
-//                            mRoutes.add(route);
-//                            Log.i(TAG, "Adding route title: " + route.getName());
+                            mRoutes.add(route);
+                            Log.i(TAG, "Adding route title: " + route.getName());
                         }
                         recyclerAdapter.setRoutes(mRoutes);
                     } else {

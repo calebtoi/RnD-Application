@@ -62,6 +62,7 @@ import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,6 +90,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<POIModel> poiSave = new ArrayList<>();
     private List<POIImage> poiImageSave = new ArrayList<>();
     private HikingRoute hikingRouteSave;
+    private Bitmap mapBitmap;
 
     private LocationManager manager;
     private Location mLocation;
@@ -109,7 +111,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     // Firebase Database
     FirebaseDatabase database;
     DatabaseReference hikingRef;
-    StorageReference mStorage;
+    StorageReference poiStorage;
+    StorageReference mapStorage;
 
     private String hikingRouteKey = "hikingKey";
     private String userID = "user";
@@ -117,7 +120,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private long UPDATE_INTERVAL = 10000;
     private long FASTEST_INTERVAL = 10000;
 
-    private static final int EDIT_REQUEST = 1;
+    private static final int EDIT_REQUEST = 54321;
     private static final int ROUTE_INFO_REQUEST = 12345;
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     public static final int MY_PERMISSIONS_REQUEST_INTERNET = 999;
@@ -138,7 +141,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // FireBase Database Variables
         database = FirebaseDatabase.getInstance();
         hikingRef = database.getReference().child("HikingRoutes");
-        mStorage = FirebaseStorage.getInstance().getReference().child("POI_Images");
+        poiStorage = FirebaseStorage.getInstance().getReference().child("poi_images");
+        mapStorage = FirebaseStorage.getInstance().getReference().child("map_images");
 
         // Retrieves User ID from FireBase
         FirebaseUser mUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -154,9 +158,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
 
-        if(checkInternetPermission()){
-            Toast.makeText(MapsActivity.this, "Internet Permissions granted", Toast.LENGTH_LONG).show();
-        }
+        checkInternetPermission();
 
         // Initialise XML variables
         final ImageButton markLocationButton = findViewById(R.id.markButton);
@@ -222,19 +224,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 endDialog.setMessage("Are you sure you want to end your route?");
 
                 endDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    // On Yes click
+                    // If the user want to end their route for any reason
                     public void onClick(final DialogInterface dialog, int which) {
                         dialog.dismiss();
-
                         // Dialog Box that prompts users to choose what the want to do with the current route
                         AlertDialog.Builder saveDialog = new AlertDialog.Builder(MapsActivity.this);
                         saveDialog.setTitle("Route Options");
                         saveDialog.setMessage("What do you want to do with your current Route?");
                         saveDialog.setPositiveButton("Save", new DialogInterface.OnClickListener() {
-                            // On Save click
+                            // If the User wants to save the route - opens activity where user can add information about the route
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
-
                                 Intent intent;
                                 intent = new Intent(MapsActivity.this, RouteInfoActivity.class);
                                 MapsActivity.this.startActivityForResult(intent, ROUTE_INFO_REQUEST);
@@ -245,7 +245,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             }
                         });
 
-                        // On No click
+                        // If the User wants to clear their current route
                         saveDialog.setNegativeButton("Clear", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
@@ -264,7 +264,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 trackingStatusContainer.setBackground(null);
                             }
                         });
-
+                        // Cancels the dialog
                         saveDialog.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
                              @Override
                              public void onClick(DialogInterface dialog, int i) {
@@ -281,7 +281,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 });
 
-                // On No click
+                // If the user does not want to end their route
                 endDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -300,10 +300,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        String id = getIntent().getStringExtra("routeID");
+
+        if(id != null) {
+            createRoute(id);
+        }
+
+
+    }
 
     // Method used to upload images to FireBase
-    private void uploadImage(POIImage poiI) {
-        StorageReference imageRef = mStorage.child(poiI.getPoiID());
+    private void uploadPOIImage(POIImage poiI) {
+        StorageReference imageRef = poiStorage.child(poiI.getPoiID());
                 imageRef.putFile(poiI.getImageUri())
                         .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                             @Override
@@ -327,6 +339,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             }
                         });
 
+
+    }
+
+    // Method used to create and upload an image of a Route
+    public void createMapImage(final String routekey) {
+        if(mMap != null) {
+            mMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
+                @Override
+                public void onSnapshotReady(Bitmap bitmap) {
+                    mapBitmap = bitmap;
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                    byte[] data = baos.toByteArray();
+
+                    mMap.clear();
+
+                    if(data != null) {
+                        StorageReference imageRef = mapStorage.child(routekey);
+                        imageRef.putBytes(data).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                Toast.makeText(getApplicationContext(), "File Uploading..Please wait! ",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(getApplicationContext(), e.getMessage(),
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+
+                            }
+                        });
+
+                    }
+                }
+            });
+        }
 
     }
 
@@ -467,8 +520,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             e.printStackTrace();
                         }
 
-//                        marker.setTag("file://" +image_path);
-
                         LocationModel tempLoc = new LocationModel(marker.getPosition().latitude, marker.getPosition().longitude);
                         POIModel tempPOI = new POIModel(marker.getTitle(), marker.getSnippet(), tempLoc);
 
@@ -495,13 +546,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         // Generates ID for current route
                         hikingRouteKey = hikingRef.push().getKey();
+
+                        createMapImage(hikingRouteKey);
+
                         // Creates a router object
                         if(poiSave != null) {
                             // Creates object with POI
-                            hikingRouteSave = new HikingRoute(routeName, routeDesc, difficulty, userID, routeSave, poiSave);
+                            hikingRouteSave = new HikingRoute(hikingRouteKey, routeName, routeDesc, difficulty, userID, routeSave, poiSave);
                         } else {
                             // Creates object without POI
-                            hikingRouteSave = new HikingRoute(routeName, routeDesc, difficulty, userID, routeSave);
+                            hikingRouteSave = new HikingRoute(hikingRouteKey, routeName, routeDesc, difficulty, userID, routeSave);
                         }
                         // Saves object to the FireBase database
                         hikingRef.child(hikingRouteKey).setValue(hikingRouteSave);
@@ -510,16 +564,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         if(poiImageSave != null) {
                             for(int i=0; i < poiImageSave.size(); i++) {
                                 if(poiImageSave.get(i) != null){
-                                    uploadImage(poiImageSave.get(i));
+                                    uploadPOIImage(poiImageSave.get(i));
                                 }
                             }
                         }
                     }
-                    // TODO: add else error handler
-
 
                     stopLocationUpdates();
-                    mMap.clear();
                     poiImageSave.clear();
                     poiSave.clear();
                     currentRoute.clear();
@@ -534,9 +585,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     // WIP
-    public void createRoute() {
+    public void createRoute(String id) {
 
-        String hikingRouteID = "-LOGHwFLQi4fAVD-dt07";
+        String hikingRouteID = id;
 
         // Child will parse the HikingRoutes uID
         hikingRef.child(hikingRouteID).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -545,7 +596,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 // Get Hiking Route
                 HikingRoute tempHR = dataSnapshot.getValue(HikingRoute.class);
                 List<LocationModel> tempLocation = tempHR.getRoute();
-                List<POIModel> tempPOI = tempHR.getPoi();
+                List<POIModel> tempPOI;
+                if(tempHR.getPoi() != null){
+                    tempPOI = tempHR.getPoi();
+
+                    // Get POI List
+                    // Loop through list to get marker objects
+                    // Add to map
+                    for(int i = 0; i < tempPOI.size(); i++) {
+
+                        POIModel poi = tempPOI.get(i);
+
+                        LatLng poiLatLng = poi.getLocation();
+
+                        final MarkerOptions markerOptions = new MarkerOptions().position(poiLatLng);
+                        markerOptions.title(tempPOI.get(i).getTitle());
+                        markerOptions.snippet(tempPOI.get(i).getDescription());
+
+                        final Marker marker = mMap.addMarker(markerOptions);
+                        marker.hideInfoWindow();
+
+                        StorageReference imageRef = FirebaseStorage.getInstance().getReference("poi_images/"+tempPOI.get(i).getPoiID());
+                        imageRef.getBytes(Long.MAX_VALUE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                            @Override
+                            public void onSuccess(byte[] bytes) {
+                                Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                                marker.setTag(bmp);
+                            }
+                        });
+                    }
+                }
 
                 // Draws Route out for the user
                 for(int i = 0; i < tempLocation.size(); i++){
@@ -569,29 +649,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 }
 
-                // Get POI List
-                // Loop through list to get marker objects
-                // Add to map
-                for(int i = 0; i < tempPOI.size(); i++) {
 
-                    LatLng poiLatLng = tempPOI.get(i).getLocation();
 
-                    final MarkerOptions markerOptions = new MarkerOptions().position(poiLatLng);
-                    markerOptions.title(tempPOI.get(i).getTitle());
-                    markerOptions.snippet(tempPOI.get(i).getDescription());
-
-                    final Marker marker = mMap.addMarker(markerOptions);
-                    marker.hideInfoWindow();
-
-                    StorageReference imageRef = FirebaseStorage.getInstance().getReference("POI_Images/"+tempPOI.get(i).getPoiID());
-                    imageRef.getBytes(Long.MAX_VALUE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
-                        @Override
-                        public void onSuccess(byte[] bytes) {
-                            Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                            marker.setTag(bmp);
-                        }
-                    });
-                }
             }
 
             @Override

@@ -1,21 +1,25 @@
 package development.calebtoi.test.datamodels;
 
+import android.util.Log;
+
 import java.util.List;
 
 public class HikingRoute {
+    private String routeID;
     private String name;
     private String description;
     private float difficulty;
     public String userID;
     public List<LocationModel> route;
-    public List<POIModel> poi;
+    private List<POIModel> poi;
 
 
     public HikingRoute() {
     }
 
     // With POI
-    public HikingRoute(String name, String description, float difficulty, String uID, List<LocationModel> route, List<POIModel> poi){
+    public HikingRoute(String rID, String name, String description, float difficulty, String uID, List<LocationModel> route, List<POIModel> poi){
+        this.routeID = rID;
         this.name = name;
         this.description = description;
         this.difficulty = difficulty;
@@ -25,7 +29,8 @@ public class HikingRoute {
     }
 
     // Without POI
-    public HikingRoute(String name, String description, float difficulty, String uID, List<LocationModel> route){
+    public HikingRoute(String rID, String name, String description, float difficulty, String uID, List<LocationModel> route){
+        this.routeID = rID;
         this.name = name;
         this.description = description;
         this.difficulty = difficulty;
@@ -34,6 +39,9 @@ public class HikingRoute {
     }
 
     /** GETTERS **/
+    public String getRouteID() {
+        return routeID;
+    }
     public String getName() {
         return name;
     }
@@ -46,8 +54,14 @@ public class HikingRoute {
     public String getDescription() {
         return description;
     }
+    public String getUserID() {
+        return userID;
+    }
 
     /** SETTERS **/
+    public void setRouteID(String routeID) {
+        this.routeID = routeID;
+    }
     public void setName(String name) {
         this.name = name;
     }

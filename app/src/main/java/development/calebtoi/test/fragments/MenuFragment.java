@@ -9,11 +9,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-;
+
 import com.google.firebase.auth.FirebaseAuth;
 
+import development.calebtoi.test.AllJourneysActivity;
 import development.calebtoi.test.MapsActivity;
-import development.calebtoi.test.MyRoutesActivity;
+import development.calebtoi.test.MyJourneysActivity;
 import development.calebtoi.test.R;
 
 public class MenuFragment extends Fragment{
@@ -28,7 +29,8 @@ public class MenuFragment extends Fragment{
 
         Button logoutButton = view.findViewById(R.id.buttonLogout);
         Button mapsButton = view.findViewById(R.id.buttonNewRoute);
-        Button myRouteButton = view.findViewById(R.id.buttonMyRoutes);
+        Button myJourneysButton = view.findViewById(R.id.button_my_journeys);
+        Button allJourneysButton = view.findViewById(R.id.button_all_journeys);
 
         // Logs user out
         logoutButton.setOnClickListener(new View.OnClickListener(){
@@ -50,11 +52,21 @@ public class MenuFragment extends Fragment{
         });
 
         // Opens view of all the users saved Routes
-        myRouteButton.setOnClickListener(new View.OnClickListener() {
+        myJourneysButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent;
-                intent = new Intent(view.getContext(), MyRoutesActivity.class);
+                intent = new Intent(view.getContext(), MyJourneysActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+            }
+        });
+
+        allJourneysButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent;
+                intent = new Intent(view.getContext(), AllJourneysActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
             }

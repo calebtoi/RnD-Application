@@ -19,19 +19,19 @@ import java.util.List;
 import development.calebtoi.test.R;
 import development.calebtoi.test.datamodels.HikingRoute;
 
-public class MyRoutesRecyclerAdapter extends RecyclerView.Adapter<MyRoutesRecyclerAdapter.MyRoutesViewHolder> {
+public class JourneyRecyclerAdapter extends RecyclerView.Adapter<JourneyRecyclerAdapter.JourneyViewHolder> {
 
     private List<HikingRoute> mRoutes;
 
     /**
      *  Provides a reference to the type of views that we are using (custom ViewHolder)
      */
-    static class MyRoutesViewHolder extends RecyclerView.ViewHolder{
+    static class JourneyViewHolder extends RecyclerView.ViewHolder{
         ImageView img;
         TextView title;
         TextView desc;
 
-        private MyRoutesViewHolder(View itemView) {
+        private JourneyViewHolder(View itemView) {
             super(itemView);
             img = itemView.findViewById(R.id.card_my_route_img);
             title = itemView.findViewById(R.id.card_my_route_title);
@@ -45,7 +45,7 @@ public class MyRoutesRecyclerAdapter extends RecyclerView.Adapter<MyRoutesRecycl
      *
      *  @param routes contains the data to populate tthe views to be used by the RecyclerView
      */
-    public MyRoutesRecyclerAdapter(List<HikingRoute> routes) {
+    public JourneyRecyclerAdapter(List<HikingRoute> routes) {
         mRoutes = routes;
     }
 
@@ -57,13 +57,13 @@ public class MyRoutesRecyclerAdapter extends RecyclerView.Adapter<MyRoutesRecycl
     // Creates new views (invoked by the layout manager)
     @NonNull
     @Override
-    public MyRoutesRecyclerAdapter.MyRoutesViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public JourneyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.card_my_routes, parent, false);
-        return new MyRoutesViewHolder(view);
+        return new JourneyViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final MyRoutesViewHolder myRoutesViewHolder, int position) {
+    public void onBindViewHolder(@NonNull final JourneyViewHolder journeyViewHolder, int position) {
         HikingRoute route = mRoutes.get(position);
 
         StorageReference imageRef = FirebaseStorage.getInstance().getReference("map_images/"+route.getRouteID());
@@ -71,11 +71,11 @@ public class MyRoutesRecyclerAdapter extends RecyclerView.Adapter<MyRoutesRecycl
             @Override
             public void onSuccess(byte[] bytes) {
                 Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                myRoutesViewHolder.img.setImageBitmap(bmp);
+                journeyViewHolder.img.setImageBitmap(bmp);
             }
         });
-        myRoutesViewHolder.title.setText(route.getName());
-        myRoutesViewHolder.desc.setText(route.getDescription());
+        journeyViewHolder.title.setText(route.getName());
+        journeyViewHolder.desc.setText(route.getDescription());
     }
 
     @Override
