@@ -1,7 +1,7 @@
 package development.calebtoi.test;
 
-import android.icu.util.Freezable;
-import android.os.Handler;
+import android.app.Activity;
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -11,7 +11,6 @@ import android.util.Log;
 import android.view.View;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -22,13 +21,13 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import development.calebtoi.test.adapters.MyRoutesRecyclerAdapter;
+import development.calebtoi.test.adapters.JourneyRecyclerAdapter;
 import development.calebtoi.test.clicklisteners.RecyclerClickListener;
 import development.calebtoi.test.datamodels.HikingRoute;
 
-public class MyRoutesActivity extends AppCompatActivity implements RecyclerClickListener.OnRecyclerClickListener {
+public class MyJourneyActivity extends AppCompatActivity implements RecyclerClickListener.OnRecyclerClickListener {
 
-    private static final String TAG = "MtRouteActivity";
+    private static final String TAG = "MyRouteActivity";
 
     // FireBase Database
     private DatabaseReference mRootRef;
@@ -42,7 +41,7 @@ public class MyRoutesActivity extends AppCompatActivity implements RecyclerClick
 
     // RecyclerView Objects
     protected RecyclerView recyclerView;
-    protected MyRoutesRecyclerAdapter recyclerAdapter;
+    protected JourneyRecyclerAdapter recyclerAdapter;
     protected RecyclerView.LayoutManager layoutManager;
 
 
@@ -52,7 +51,7 @@ public class MyRoutesActivity extends AppCompatActivity implements RecyclerClick
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_my_routes);
+        setContentView(R.layout.activity_my_journeys);
 
         // FireBase Auth
         mFirebaseAuth = FirebaseAuth.getInstance();
@@ -75,7 +74,7 @@ public class MyRoutesActivity extends AppCompatActivity implements RecyclerClick
         recyclerView.addOnItemTouchListener(new RecyclerClickListener(this, recyclerView, this));
 
         // Creates recyclerAdapter for content
-        recyclerAdapter = new MyRoutesRecyclerAdapter(mRoutes);
+        recyclerAdapter = new JourneyRecyclerAdapter(mRoutes);
         recyclerView.setAdapter(recyclerAdapter);
 
     }
@@ -94,6 +93,14 @@ public class MyRoutesActivity extends AppCompatActivity implements RecyclerClick
 
     @Override
     public void onClick(View view, int position) {
+
+        String routeID = mRoutes.get(position).getRouteID();
+
+        Intent intent = new Intent(MyJourneyActivity.this, MapsActivity.class);
+        intent.putExtra("routeID", routeID);
+        setResult(Activity.RESULT_OK);
+        startActivity(intent);
+
 
     }
 
@@ -117,8 +124,16 @@ public class MyRoutesActivity extends AppCompatActivity implements RecyclerClick
                         mRoutes.clear();
                         for(DataSnapshot routeSnapshot : dataSnapshot.getChildren()) {
                             HikingRoute route = routeSnapshot.getValue(HikingRoute.class);
-                            mRoutes.add(route);
-                            Log.i(TAG, "Current route title: " + route.getName());
+                            Log.i(TAG, "UserID: " + userID);
+                            Log.i(TAG, "Route UserID " + route.getUserID());
+
+                            if(route.getUserID().equals(userID)){
+                                mRoutes.add(route);
+                                Log.i(TAG, "Adding route title: " + route.getName());
+                            }
+
+//                            mRoutes.add(route);
+//                            Log.i(TAG, "Adding route title: " + route.getName());
                         }
                         recyclerAdapter.setRoutes(mRoutes);
                     } else {
