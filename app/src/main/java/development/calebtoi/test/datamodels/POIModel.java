@@ -38,4 +38,9 @@ public class POIModel {
 
         return temp;
     }
+
+    // Setters
+    public void setLocation(LocationModel location) {
+        this.location = location;
+    }
 }

@@ -596,9 +596,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 // Get Hiking Route
                 HikingRoute tempHR = dataSnapshot.getValue(HikingRoute.class);
                 List<LocationModel> tempLocation = tempHR.getRoute();
-                List<POIModel> tempPOI;
+                List<POIModel> tempPOI = new ArrayList<>();
+
+                // Fix for problems with retrieving POI locations
+                for(DataSnapshot snapshot : dataSnapshot.child("poi").getChildren()){
+
+                    POIModel poi = snapshot.getValue(POIModel.class);
+                    double lat = snapshot.child("location").child("latitude").getValue(double.class);
+                    double lng = snapshot.child("location").child("longitude").getValue(double.class);
+                    poi.setLocation(new LocationModel(lat, lng));
+
+                    tempPOI.add(poi);
+                }
+
+
                 if(tempHR.getPoi() != null){
-                    tempPOI = tempHR.getPoi();
 
                     // Get POI List
                     // Loop through list to get marker objects
@@ -646,11 +658,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             .add(tempLatLng1, tempLatLng2)
                             .width(10)
                             .color(Color.YELLOW));
-
                 }
-
-
-
             }
 
             @Override
