@@ -8,87 +8,94 @@
 
     <!-- TODO: change to suitable colours -->
 
-    <LinearLayout
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_weight="95"
+        tools:context=".MapsActivity" />
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:id="@+id/test"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/trackingStatusCont"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/trackingStatusText"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
         android:orientation="vertical"
-        android:weightSum="90"
-        android:background="@color/colorPrimaryDark">
-
-        <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:tools="http://schemas.android.com/tools"
-            android:id="@+id/map"
-            android:name="com.google.android.gms.maps.SupportMapFragment"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="95"
-            tools:context=".MapsActivity" />
-
+        android:paddingBottom="10dp"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:paddingTop="5dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingTop="5dp"
-                    android:gravity="center">
+            <ImageButton
+                android:id="@+id/startButton"
+                android:layout_width="@dimen/circle_big"
+                android:layout_height="@dimen/circle_big"
+                android:elevation="10dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/circle_button"
+                android:src="@drawable/round_fiber_manual_record_24" />
 
-                    <Button
-                        android:id="@+id/startButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minHeight="40dp"
-                        android:paddingStart="5dp"
-                        android:paddingEnd="5dp"
-                        android:text="@string/start"
-                        android:textColor="@android:color/white"
-                        android:background="@drawable/rounded_button"
-                        android:drawableStart="@drawable/round_fiber_manual_record_24"
-                        android:layout_margin="5dp"/>
+            <ImageButton
+                android:id="@+id/markButton"
+                android:layout_width="@dimen/circle_small"
+                android:layout_height="@dimen/circle_small"
+                android:elevation="10dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/circle_button"
+                android:src="@drawable/round_add_location_24" />
 
-                    <Button
-                        android:id="@+id/markButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minHeight="40dp"
-                        android:paddingStart="5dp"
-                        android:paddingEnd="5dp"
-                        android:drawableStart="@drawable/round_add_location_24"
-                        android:text="@string/mark"
-                        android:textColor="@android:color/white"
-                        android:background="@drawable/rounded_button"
-                        android:layout_margin="5dp"/>
-
-                    <Button
-                        android:id="@+id/stopButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minHeight="40dp"
-                        android:paddingStart="5dp"
-                        android:paddingEnd="5dp"
-                        android:drawableStart="@drawable/round_stop_24"
-                        android:text="@string/stop"
-                        android:textColor="@android:color/white"
-                        android:background="@drawable/rounded_button"
-                        android:layout_margin="5dp"/>
-
-                </LinearLayout>
-
+            <ImageButton
+                android:id="@+id/stopButton"
+                android:layout_width="@dimen/circle_big"
+                android:layout_height="@dimen/circle_big"
+                android:elevation="10dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/circle_button"
+                android:src="@drawable/round_stop_24" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:layout_weight="2"
             android:gravity="center"
-            android:paddingStart="5dp"
+            android:orientation="horizontal"
             android:paddingEnd="5dp"
-            android:layout_weight="2">
+            android:paddingStart="5dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -100,17 +107,16 @@
                 android:id="@+id/Distance_Text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="9999"
+                android:text=""
                 android:textColor="@android:color/white" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=" metres"
-                android:textColor="@android:color/white" />
 
         </LinearLayout>
 
+
     </LinearLayout>
+
+
+
 
 </android.support.constraint.ConstraintLayout>

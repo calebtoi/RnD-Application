@@ -1,5 +1,9 @@
 package development.calebtoi.test.datamodels;
 
+import android.util.Log;
+
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.UUID;
 
 public class POIModel {
@@ -9,10 +13,8 @@ public class POIModel {
     public String description;
     private LocationModel location;
 
-    // TODO: add photo saving
-
-
-    public POIModel(){}
+    public POIModel(){
+    }
 
     public POIModel(String title, String desc, LocationModel loc) {
         this.poiID = UUID.randomUUID().toString();
@@ -20,7 +22,6 @@ public class POIModel {
         this.description = desc;
         this.location = loc;
     }
-
 
     // Getters
     public String getTitle() {
@@ -32,7 +33,9 @@ public class POIModel {
     public String getPoiID() {
         return poiID;
     }
-    public LocationModel getLocation() {
-        return location;
+    public LatLng getLocation() {
+        LatLng temp = new LatLng(location.getLat(), location.getLng());
+
+        return temp;
     }
 }
